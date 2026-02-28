@@ -1,7 +1,11 @@
 import { Search, Bell, Wallet, Zap } from "lucide-react";
 import { motion } from "framer-motion";
+import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/clerk-react";
+import { Button } from "@/components/ui/button";
 
 export function TopNavbar() {
+  const { user } = useUser();
+  
   return (
     <motion.header
       initial={{ y: -10, opacity: 0 }}
@@ -27,7 +31,7 @@ export function TopNavbar() {
       </div>
 
       {/* Right section */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <button className="w-9 h-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors relative">
           <Bell className="w-4 h-4" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-saffron" />
@@ -38,7 +42,27 @@ export function TopNavbar() {
           <span className="font-semibold text-foreground text-xs">₹2,840</span>
         </div>
 
-        <div className="w-8 h-8 rounded-full bg-gradient-tri" />
+        <SignedIn>
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 text-sm">
+            <span className="text-muted-foreground text-xs">Welcome,</span>
+            <span className="font-medium text-foreground text-xs">{user?.firstName || user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] || "User"}</span>
+          </div>
+          <UserButton 
+            afterSignOutUrl="/"
+            appearance={{
+              elements: {
+                avatarBox: "w-8 h-8"
+              }
+            }}
+          />
+        </SignedIn>
+        <SignedOut>
+          <SignInButton mode="modal">
+            <Button variant="default" size="sm">
+              Sign In
+            </Button>
+          </SignInButton>
+        </SignedOut>
       </div>
     </motion.header>
   );

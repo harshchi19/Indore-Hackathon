@@ -10,11 +10,24 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    // Increase header size limit to handle Clerk auth tokens
+    headers: {
+      "Cache-Control": "no-store",
+    },
   },
   plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  // Increase Node.js header size via optimizeDeps
+  optimizeDeps: {
+    esbuildOptions: {
+      // Node.js global to browser globalThis
+      define: {
+        global: "globalThis",
+      },
     },
   },
 }));

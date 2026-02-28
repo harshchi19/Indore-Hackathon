@@ -4,10 +4,12 @@ import {
   LayoutDashboard, ShoppingCart, Brain, Leaf, TrendingUp, Factory, MapPin, Zap, ChevronLeft, ChevronRight, Calendar, Globe,
   Users, ShoppingBag, Plug, Award, DollarSign, CreditCard, ShieldCheck, Scale, Settings, Bell,
   User, FileText, History, Wallet, UsersRound, HelpCircle, PlusCircle, ChevronDown,
-  Home, ArrowLeftRight, Banknote, TreePine, BarChart3, UserCircle, Wrench,
+  Home, ArrowLeftRight, Banknote, TreePine, BarChart3, UserCircle, Wrench, LogOut,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useUser, useClerk, SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
+import { Button } from "@/components/ui/button";
 
 interface NavItem {
   title: string;
@@ -104,6 +106,8 @@ export function AppSidebar() {
     Account: false,
     Administration: false,
   });
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
 
   const toggleSection = (label: string) => {
     setExpandedSections((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -252,16 +256,71 @@ export function AppSidebar() {
 
       {/* User */}
       <div className={cn(
-        "px-4 py-3 border-t border-border flex items-center gap-3",
+        "px-4 py-3 border-t border-border",
         collapsed && "justify-center px-2"
       )}>
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex-shrink-0 ring-2 ring-primary/20" />
-        {!collapsed && (
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-foreground truncate">Arjun S.</p>
-            <p className="text-xs text-muted-foreground truncate">Producer</p>
+        <SignedIn>
+          <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
+            {user?.imageUrl ? (
+              <img 
+                src={user.imageUrl} 
+                alt={user.fullName || "User"} 
+                className="w-9 h-9 rounded-full flex-shrink-0 ring-2 ring-primary/20 object-cover"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex-shrink-0 ring-2 ring-primary/20 flex items-center justify-center">
+                <span className="text-primary-foreground text-sm font-bold">
+                  {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress?.charAt(0)?.toUpperCase() || "U"}
+                </span>
+              </div>
+            )}
+            {!collapsed && (
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {user?.fullName || user?.firstName || user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] || "User"}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user?.emailAddresses?.[0]?.emailAddress || "Producer"}
+                </p>
+              </div>
+            )}
           </div>
-        )}
+          {!collapsed && (
+            <button
+              onClick={() => signOut({ redirectUrl: "/" })}
+              className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out</span>
+            </button>
+          )}
+          {collapsed && (
+            <button
+              onClick={() => signOut({ redirectUrl: "/" })}
+              className="mt-2 w-10 h-10 mx-auto flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
+        </SignedIn>
+        <SignedOut>
+          <div className={cn("flex items-center", collapsed ? "justify-center" : "gap-3")}>
+            {collapsed ? (
+              <SignInButton mode="modal">
+                <button className="w-10 h-10 rounded-lg bg-primary/10 hover:bg-primary/20 flex items-center justify-center text-primary transition-colors">
+                  <User className="w-5 h-5" />
+                </button>
+              </SignInButton>
+            ) : (
+              <SignInButton mode="modal">
+                <Button variant="default" size="sm" className="w-full">
+                  Sign In
+                </Button>
+              </SignInButton>
+            )}
+          </div>
+        </SignedOut>
       </div>
     </motion.aside>
   );
