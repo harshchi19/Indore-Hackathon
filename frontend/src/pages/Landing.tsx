@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Zap, ArrowRight, ShoppingCart, BarChart3, Leaf, Globe, Brain, Building2, Sun, Wind, Battery } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
+import AuthHeader from "@/components/AuthHeader";
 
 const Landing = () => {
   return (
@@ -20,9 +21,12 @@ const Landing = () => {
           <a href="#stats" className="hover:text-foreground transition-colors">Stats</a>
           <a href="#why" className="hover:text-foreground transition-colors">Why GreenGrid</a>
         </div>
-        <Link to="/dashboard">
-          <Button variant="default" size="sm">Launch App</Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to="/dashboard">
+            <Button variant="outline" size="sm">Launch App</Button>
+          </Link>
+          <AuthHeader />
+        </div>
       </nav>
 
       {/* Hero */}
