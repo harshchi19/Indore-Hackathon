@@ -98,7 +98,42 @@ mongod
 mongosh --eval "db.runCommand({ ping: 1 })"
 ```
 
-### 2.5 Start the backend server
+### 2.5 Start Redis
+
+Redis is used for caching and rate-limiting. Choose one method:
+
+**Option A — Docker (recommended for all platforms):**
+```bash
+docker run -d --name redis -p 6379:6379 redis:7-alpine
+```
+
+**Option B — Linux (apt):**
+```bash
+sudo apt update
+sudo apt install redis-server -y
+sudo systemctl start redis
+sudo systemctl enable redis
+```
+
+**Option C — macOS (Homebrew):**
+```bash
+brew install redis
+brew services start redis
+```
+
+**Option D — Windows (Memurai or WSL):**
+- **Memurai** (native Windows Redis alternative): Download from [memurai.com](https://www.memurai.com/), install, and it runs as a Windows service automatically.
+- **WSL**: Install Redis inside WSL using the Linux instructions above.
+
+**Verify Redis is running:**
+```bash
+redis-cli ping
+```
+Expected response: `PONG`
+
+> **Note:** Redis is optional for local development. If Redis is not running, the backend will still start — rate-limiting falls back to an in-memory implementation. However, Redis is required for production deployments.
+
+### 2.6 Start the backend server
 
 ```bash
 cd backend
@@ -114,7 +149,7 @@ The API will be available at:
 | `http://localhost:8000/redoc` | ReDoc (alternative docs) |
 | `http://localhost:8000/health` | Health check |
 
-### 2.6 Verify the backend
+### 2.7 Verify the backend
 
 ```bash
 curl http://localhost:8000/health
