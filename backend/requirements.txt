@@ -9,6 +9,7 @@ pydantic-settings==2.7.1
 # MongoDB / ODM
 motor==3.6.0
 beanie==1.27.0
+dnspython==2.7.0
 
 # Redis (caching / future pub-sub)
 redis[hiredis]==5.2.1
