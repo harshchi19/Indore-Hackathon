@@ -1,0 +1,31 @@
+# Verdant Backend – Part A Dependencies
+
+# Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic[email]==2.10.4
+pydantic-settings==2.7.1
+
+# MongoDB / ODM
+motor==3.6.0
+beanie==1.27.0
+
+# Redis (caching / future pub-sub)
+redis[hiredis]==5.2.1
+
+# Security
+PyJWT==2.10.1
+argon2-cffi==23.1.0
+
+# Task queue (Part B will extend with Celery workers)
+# celery==5.4.0  # uncomment when needed
+
+# WebSockets (included via uvicorn[standard])
+
+# Utilities
+python-dotenv==1.0.1
+
+# Dev / Test
+httpx==0.28.1
+pytest==8.3.4
+pytest-asyncio==0.25.0
