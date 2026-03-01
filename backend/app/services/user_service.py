@@ -1,6 +1,7 @@
 """
 Verdant Backend – User service (Part A)
 Business logic for user registration, authentication, and profile management.
+Includes account lockout protection and security audit logging.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from beanie import PydanticObjectId
 from fastapi import HTTPException, status
 
 from app.core.logging import get_logger
+from app.core.config import get_settings
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -19,6 +21,8 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
+from app.core.account_lockout import lockout_service
+from app.core.audit_log import audit_logger
 from app.models.users import User
 from app.schemas.users import (
     TokenPair,
@@ -29,6 +33,7 @@ from app.schemas.users import (
 )
 
 logger = get_logger("services.user")
+settings = get_settings()
 
 
 def _user_to_response(user: User) -> UserResponse:
@@ -60,24 +65,87 @@ async def register_user(payload: UserRegisterRequest) -> UserResponse:
     )
     await user.insert()
     logger.info("User registered: %s (%s)", user.email, user.role.value)
+    
+    # Audit log: account created
+    audit_logger.log_account_created(
+        user_id=str(user.id),
+        user_email=user.email,
+        role=user.role.value
+    )
+    
     return _user_to_response(user)
 
 
-async def authenticate_user(payload: UserLoginRequest) -> TokenPair:
-    """Validate credentials and return access + refresh tokens."""
+async def authenticate_user(payload: UserLoginRequest, ip_address: str = None) -> TokenPair:
+    """
+    Validate credentials and return access + refresh tokens.
+    Includes account lockout protection and security audit logging.
+    """
+    # Check if account is locked
+    is_locked, seconds_remaining = await lockout_service.is_locked(payload.email)
+    if is_locked:
+        minutes_remaining = (seconds_remaining or 0) // 60 + 1
+        audit_logger.log_login_failed(
+            user_email=payload.email,
+            ip_address=ip_address,
+            reason="Account locked"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_423_LOCKED,
+            detail=f"Account is temporarily locked due to multiple failed login attempts. "
+                   f"Please try again in {minutes_remaining} minutes.",
+        )
+    
     user = await User.find_one(User.email == payload.email)
+    
+    # Invalid credentials
     if user is None or not verify_password(payload.password, user.hashed_password):
+        # Record failed attempt
+        attempt_count, now_locked = await lockout_service.record_failed_attempt(
+            payload.email,
+            ip_address
+        )
+        
+        # Audit log: failed login
+        audit_logger.log_login_failed(
+            user_email=payload.email,
+            ip_address=ip_address,
+            reason="Invalid credentials"
+        )
+        
+        if now_locked:
+            # Audit log: account locked
+            audit_logger.log_account_locked(
+                user_email=payload.email,
+                ip_address=ip_address,
+                attempt_count=attempt_count
+            )
+            raise HTTPException(
+                status_code=status.HTTP_423_LOCKED,
+                detail=f"Account locked due to {attempt_count} failed login attempts. "
+                       f"Please try again in {settings.LOCKOUT_DURATION_MINUTES} minutes.",
+            )
+        
+        remaining_attempts = settings.MAX_LOGIN_ATTEMPTS - attempt_count
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
+            detail=f"Invalid email or password. {remaining_attempts} attempts remaining.",
         )
 
     if not user.is_active:
+        audit_logger.log_login_failed(
+            user_email=payload.email,
+            ip_address=ip_address,
+            reason="Account deactivated"
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is deactivated",
         )
 
+    # Successful login - clear failed attempts
+    await lockout_service.clear_failed_attempts(payload.email)
+    
     access = create_access_token(subject=str(user.id), extra={"role": user.role.value})
     refresh = create_refresh_token(subject=str(user.id))
 
@@ -86,6 +154,14 @@ async def authenticate_user(payload: UserLoginRequest) -> TokenPair:
     await user.save()
 
     logger.info("User authenticated: %s", user.email)
+    
+    # Audit log: successful login
+    audit_logger.log_login_success(
+        user_id=str(user.id),
+        user_email=user.email,
+        ip_address=ip_address
+    )
+    
     return TokenPair(access_token=access, refresh_token=refresh)
 
 

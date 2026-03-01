@@ -15,6 +15,12 @@ from fastapi.responses import JSONResponse
 from app.core.config import get_settings
 from app.core.logging import get_logger, setup_logging
 from app.core.rate_limit import RateLimitMiddleware
+from app.core.security_headers import SecurityHeadersMiddleware
+from app.core.request_security import (
+    RequestIDMiddleware,
+    RequestSizeLimitMiddleware,
+    SuspiciousRequestMiddleware,
+)
 from app.db.session import close_db, connect_db
 
 settings = get_settings()
@@ -77,13 +83,33 @@ app = FastAPI(
 )
 
 # ── Middleware ──────────────────────────────────────────────
+# Order matters! Middleware executes in reverse order of registration.
+# Last registered = first to process request, last to process response.
+
+# Request ID tracking (outermost - adds ID to all requests)
+app.add_middleware(RequestIDMiddleware)
+
+# Security headers (adds security headers to all responses)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Suspicious request detection (blocks malicious patterns)
+app.add_middleware(SuspiciousRequestMiddleware)
+
+# Request size limits (prevents DoS via large payloads)
+app.add_middleware(RequestSizeLimitMiddleware)
+
+# CORS with tightened methods (only what's actually needed)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins_list,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With", "Accept", "X-Request-ID"],
+    expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "Retry-After", "X-Request-ID"],
+    max_age=600,  # Cache preflight for 10 minutes
 )
+
+# Rate limiting (innermost - applies to all API requests)
 app.add_middleware(RateLimitMiddleware)
 
 

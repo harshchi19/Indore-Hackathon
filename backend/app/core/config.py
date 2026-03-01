@@ -76,6 +76,14 @@ class Settings(BaseSettings):
 
     # ── Rate Limiting ─────────────────────────────────────
     RATE_LIMIT_PER_MINUTE: int = 60
+    USE_REDIS_RATE_LIMIT: bool = True  # Use Redis for distributed rate limiting
+
+    # ── Account Lockout ───────────────────────────────────
+    MAX_LOGIN_ATTEMPTS: int = 5
+    LOCKOUT_DURATION_MINUTES: int = 15
+
+    # ── Security Headers ──────────────────────────────────
+    ENABLE_SECURITY_HEADERS: bool = True
 
     # ── Pricing Engine ────────────────────────────────────
     PRICING_UPDATE_INTERVAL_SECONDS: int = 10
