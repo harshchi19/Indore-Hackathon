@@ -1,6 +1,6 @@
-# Verdant Energy Platform — Comprehensive Project Report
+# GreenGrid Energy Platform — Comprehensive Project Report
 
-> **App Name:** Verdant Energy Platform (branded as **GreenGrid** on frontend)
+> **App Name:** GreenGrid Energy Platform (branded as **GreenGrid** on frontend)
 > **Version:** 0.1.0
 > **Description:** Decentralised green-energy trading platform — India's premier peer-to-peer green energy marketplace
 > **Stack:** FastAPI (Python 3.11) + React 18 + TypeScript + Vite + MongoDB + Redis + Neo4j
