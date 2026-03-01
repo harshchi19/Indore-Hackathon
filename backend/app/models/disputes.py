@@ -9,7 +9,7 @@ from enum import Enum
 from typing import List, Optional
 
 from beanie import PydanticObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.db.base import TimestampedDocument
 
@@ -34,6 +34,14 @@ class AuditEntry(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     actor: str  # user id or "system"
     action: str
+
+    @field_validator("actor", mode="before")
+    @classmethod
+    def coerce_actor_to_str(cls, v):
+        """Coerce ObjectId (from seeded data) to str."""
+        if not isinstance(v, str):
+            return str(v)
+        return v
 
 
 class Dispute(TimestampedDocument):

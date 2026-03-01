@@ -17,8 +17,7 @@ import {
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { LoadingSpinner, ErrorCard } from "@/components/ui/ApiStates";
-import { usePayments } from "@/hooks/usePayments";
-import { useWalletBalance, useAddFunds } from "@/hooks/useWallet";
+import { useWalletBalance, useAddFunds, useWalletTransactions } from "@/hooks/useWallet";
 import { toast } from "sonner";
 
 interface Transaction {
@@ -31,38 +30,48 @@ interface Transaction {
   category: "energy_purchase" | "energy_sale" | "deposit" | "withdrawal" | "refund";
 }
 
+const txnTypeToCategory = (t: string): Transaction["category"] => {
+  switch (t) {
+    case "deposit": return "deposit";
+    case "purchase": return "energy_purchase";
+    case "sale": return "energy_sale";
+    case "refund": return "refund";
+    case "withdrawal": return "withdrawal";
+    default: return "energy_purchase";
+  }
+};
+
 const WalletPage = () => {
   const [copied, setCopied] = useState(false);
   const [addAmount, setAddAmount] = useState("");
 
-  const { data: paymentsRes, isLoading, error, refetch } = usePayments({ limit: 50 });
+  const { data: txnRes, isLoading, error, refetch } = useWalletTransactions({ limit: 50 });
   const { data: walletBalanceData } = useWalletBalance();
   const addFundsMutation = useAddFunds();
 
   const currentBalance = walletBalanceData?.wallet_balance ?? 0;
 
   const transactions: Transaction[] = useMemo(() => {
-    if (!paymentsRes?.items) return [];
-    return paymentsRes.items.map((p) => ({
-      id: p.id,
-      type: p.amount_eur > 0 ? "debit" as const : "credit" as const,
-      description: `Payment ${p.id.slice(0, 8)} - Contract ${p.contract_id.slice(0, 8)}`,
-      amount: `₹${Math.abs(p.amount_eur).toLocaleString()}`,
-      timestamp: new Date(p.created_at).toLocaleString(),
-      status: (p.status === "completed" ? "completed" : p.status === "pending" ? "pending" : "failed") as Transaction["status"],
-      category: "energy_purchase" as const,
+    if (!txnRes?.items) return [];
+    return txnRes.items.map((t) => ({
+      id: t.id,
+      type: (t.txn_type === "purchase" || t.txn_type === "withdrawal") ? "debit" as const : "credit" as const,
+      description: t.description,
+      amount: `₹${t.amount.toLocaleString()}`,
+      timestamp: new Date(t.created_at).toLocaleString(),
+      status: "completed" as const,
+      category: txnTypeToCategory(t.txn_type),
     }));
-  }, [paymentsRes]);
+  }, [txnRes]);
 
   const totalSpent = useMemo(() => {
-    if (!paymentsRes?.items) return 0;
-    return paymentsRes.items.filter(p => p.status === "completed").reduce((s, p) => s + p.amount_eur, 0);
-  }, [paymentsRes]);
+    if (!txnRes?.items) return 0;
+    return txnRes.items
+      .filter(t => t.txn_type === "purchase")
+      .reduce((s, t) => s + t.amount, 0);
+  }, [txnRes]);
 
-  const pendingAmount = useMemo(() => {
-    if (!paymentsRes?.items) return 0;
-    return paymentsRes.items.filter(p => p.status === "pending").reduce((s, p) => s + p.amount_eur, 0);
-  }, [paymentsRes]);
+  const pendingAmount = 0; // wallet transactions are all settled
 
   const walletData = {
     balance: `₹${currentBalance.toLocaleString()}`,

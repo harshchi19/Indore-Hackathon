@@ -109,7 +109,11 @@ async def handle_webhook(payload: PaymentWebhookPayload) -> PaymentResponse:
             from app.services import wallet_service
             contract = await Contract.get(payment.contract_id)
             if contract:
-                await wallet_service.credit_balance(str(contract.producer_id), payment.amount_eur)
+                await wallet_service.credit_balance(
+                    str(contract.producer_id), payment.amount_eur,
+                    reference_id=str(contract.id),
+                    description=f"Energy sale credit – contract {str(contract.id)[:8]}",
+                )
         except Exception as exc:
             logger.warning("Seller credit failed (non-blocking): %s", exc)
 
@@ -152,7 +156,7 @@ async def list_payments(
         conditions["status"] = status_filter.value
 
     total = await Payment.find(conditions).count()
-    items = await Payment.find(conditions).skip(skip).limit(limit).to_list()
+    items = await Payment.find(conditions).sort("-created_at").skip(skip).limit(limit).to_list()
     return PaymentListResponse(
         total=total,
         items=[_payment_to_response(p) for p in items],
@@ -184,7 +188,11 @@ async def simulate_settlement_payout(contract_id: str) -> PaymentResponse:
         from app.services import wallet_service
         contract = await Contract.get(PydanticObjectId(contract_id))
         if contract:
-            await wallet_service.credit_balance(str(contract.producer_id), payment.amount_eur)
+            await wallet_service.credit_balance(
+                str(contract.producer_id), payment.amount_eur,
+                reference_id=contract_id,
+                description=f"Settlement payout – contract {contract_id[:8]}",
+            )
     except Exception as exc:
         logger.warning("Seller credit on settle failed (non-blocking): %s", exc)
 

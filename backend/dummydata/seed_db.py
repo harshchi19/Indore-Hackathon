@@ -81,13 +81,14 @@ def convert_oid_fields(doc: dict) -> dict:
             except Exception:
                 pass  # leave as-is if not a valid OID
 
-    # Handle nested audit_log actor fields
-    if "audit_log" in doc:
-        for entry in doc["audit_log"]:
-            try:
-                entry["actor"] = ObjectId(entry["actor"])
-            except Exception:
-                pass
+    # Handle nested audit_log actor fields — keep as string, NOT ObjectId
+    # (AuditEntry.actor is typed as str in the model)
+    # if "audit_log" in doc:
+    #     for entry in doc["audit_log"]:
+    #         try:
+    #             entry["actor"] = ObjectId(entry["actor"])
+    #         except Exception:
+    #             pass
     return doc
 
 

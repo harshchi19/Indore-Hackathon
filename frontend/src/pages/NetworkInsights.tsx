@@ -206,6 +206,7 @@ const NetworkInsights = () => {
   };
 
   const stats = statsData?.stats;
+  const neo4jUnavailable = statsData?.status === "unavailable";
   const activeViz = visualizations.find(v => v.id === selectedViz);
 
   return (
@@ -267,6 +268,21 @@ const NetworkInsights = () => {
                 )}
               </div>
             </motion.div>
+
+            {/* Neo4j unavailable banner */}
+            {neo4jUnavailable && (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-400 text-sm">
+                <span className="text-base">⚠️</span>
+                <span>
+                  <strong>Graph database is paused.</strong> The Neo4j Aura free tier auto-pauses after inactivity.
+                  Resume it from the{" "}
+                  <a href="https://console.neo4j.io" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-300">
+                    Aura console
+                  </a>
+                  , then restart the backend. Live visualizations are unavailable until it reconnects.
+                </span>
+              </div>
+            )}
 
             {/* Visualization Buttons */}
             <motion.div

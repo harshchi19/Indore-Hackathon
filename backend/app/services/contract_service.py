@@ -113,7 +113,7 @@ async def list_contracts(
         conditions["status"] = status_filter.value
 
     total = await Contract.find(conditions).count()
-    items = await Contract.find(conditions).skip(skip).limit(limit).to_list()
+    items = await Contract.find(conditions).sort("-created_at").skip(skip).limit(limit).to_list()
     return ContractListResponse(
         total=total,
         items=[_contract_to_response(c) for c in items],

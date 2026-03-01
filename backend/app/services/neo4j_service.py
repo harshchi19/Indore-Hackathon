@@ -91,6 +91,11 @@ def get_driver() -> AsyncDriver:
     return _driver
 
 
+def is_available() -> bool:
+    """Return True if the Neo4j driver is initialised and ready."""
+    return _driver is not None
+
+
 @asynccontextmanager
 async def get_session():
     """Context manager for Neo4j session."""
@@ -917,12 +922,16 @@ async def get_graph_stats() -> Dict[str, Any]:
 
 async def health_check() -> Dict[str, Any]:
     """Check Neo4j connection health."""
+    if not is_available():
+        return {
+            "status": "unavailable",
+            "error": "Neo4j driver not initialised (instance may be paused)",
+            "uri": NEO4J_URI,
+        }
     try:
         driver = get_driver()
         await driver.verify_connectivity()
-        
         stats = await get_graph_stats()
-        
         return {
             "status": "healthy",
             "uri": NEO4J_URI,

@@ -18,6 +18,12 @@ from app.core.logging import get_logger
 from app.models.users import User
 from app.services import neo4j_service
 
+try:
+    from neo4j.exceptions import ServiceUnavailable, SessionExpired
+except ImportError:
+    ServiceUnavailable = Exception
+    SessionExpired = Exception
+
 logger = get_logger("routes.neo4j")
 
 router = APIRouter(prefix="/graph", tags=["Graph Database"])
@@ -27,32 +33,33 @@ router = APIRouter(prefix="/graph", tags=["Graph Database"])
 # HEALTH & STATUS
 # ══════════════════════════════════════════════════════════════
 
+_UNAVAILABLE_STATS = {
+    "total_users": 0, "total_producers": 0, "total_listings": 0,
+    "total_contracts": 0, "total_relationships": 0,
+}
+
+
 @router.get("/health")
 async def neo4j_health():
     """Check Neo4j connection health and get graph statistics."""
     try:
-        health = await neo4j_service.health_check()
-        return health
+        return await neo4j_service.health_check()
     except Exception as e:
         logger.error("Neo4j health check failed: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Neo4j unavailable: {str(e)}"
-        )
+        return {"status": "unavailable", "error": str(e)}
 
 
 @router.get("/stats")
 async def graph_stats():
     """Get detailed graph statistics."""
+    if not neo4j_service.is_available():
+        return {"status": "unavailable", "stats": _UNAVAILABLE_STATS}
     try:
         stats = await neo4j_service.get_graph_stats()
         return {"status": "ok", "stats": stats}
     except Exception as e:
         logger.error("Failed to get graph stats: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+        return {"status": "unavailable", "stats": _UNAVAILABLE_STATS}
 
 
 # ══════════════════════════════════════════════════════════════
@@ -73,6 +80,8 @@ async def recommend_producers(
     - Energy source preferences
     - Producer ratings and activity
     """
+    if not neo4j_service.is_available():
+        return {"user_id": str(current_user.id), "recommendations": [], "count": 0}
     try:
         recommendations = await neo4j_service.recommend_producers_for_user(
             user_id=str(current_user.id),
@@ -86,10 +95,7 @@ async def recommend_producers(
         }
     except Exception as e:
         logger.error("Failed to get producer recommendations: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+        return {"user_id": str(current_user.id), "recommendations": [], "count": 0}
 
 
 @router.get("/recommendations/listings/{listing_id}")
@@ -98,6 +104,8 @@ async def similar_listings(
     limit: int = 5,
 ):
     """Get similar energy listings based on graph relationships."""
+    if not neo4j_service.is_available():
+        return {"listing_id": listing_id, "similar_listings": [], "count": 0}
     try:
         similar = await neo4j_service.recommend_similar_listings(
             listing_id=listing_id,
@@ -110,10 +118,7 @@ async def similar_listings(
         }
     except Exception as e:
         logger.error("Failed to get similar listings: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+        return {"listing_id": listing_id, "similar_listings": [], "count": 0}
 
 
 @router.get("/recommendations/similar-users")
@@ -122,6 +127,8 @@ async def similar_users(
     current_user: User = Depends(get_current_user),
 ):
     """Find users with similar trading patterns."""
+    if not neo4j_service.is_available():
+        return {"user_id": str(current_user.id), "similar_users": [], "count": 0}
     try:
         similar = await neo4j_service.get_users_who_bought_similar(
             user_id=str(current_user.id),
@@ -134,10 +141,7 @@ async def similar_users(
         }
     except Exception as e:
         logger.error("Failed to get similar users: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+        return {"user_id": str(current_user.id), "similar_users": [], "count": 0}
 
 
 # ══════════════════════════════════════════════════════════════
@@ -147,15 +151,22 @@ async def similar_users(
 @router.get("/analytics/energy-flow")
 async def energy_flow_analytics():
     """Get overall energy trading flow analytics."""
+    if not neo4j_service.is_available():
+        return {
+            "total_energy_traded_kwh": 0, "total_transactions": 0,
+            "top_energy_sources": [], "active_trade_routes": 0,
+            "avg_contract_size_kwh": 0,
+        }
     try:
         analytics = await neo4j_service.get_energy_flow_analytics()
         return analytics
     except Exception as e:
         logger.error("Failed to get energy flow analytics: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+        return {
+            "total_energy_traded_kwh": 0, "total_transactions": 0,
+            "top_energy_sources": [], "active_trade_routes": 0,
+            "avg_contract_size_kwh": 0,
+        }
 
 
 @router.get("/analytics/producer-rankings")
@@ -164,21 +175,17 @@ async def producer_rankings(
     limit: int = 10,
 ):
     """Get ranked list of top producers."""
+    if not neo4j_service.is_available():
+        return {"rankings": [], "count": 0}
     try:
         rankings = await neo4j_service.get_producer_rankings(
             energy_source=energy_source,
             limit=limit,
         )
-        return {
-            "rankings": rankings,
-            "count": len(rankings),
-        }
+        return {"rankings": rankings, "count": len(rankings)}
     except Exception as e:
         logger.error("Failed to get producer rankings: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+        return {"rankings": [], "count": 0}
 
 
 @router.get("/analytics/user-graph")
@@ -190,6 +197,11 @@ async def user_trading_graph(
     
     Returns all connected producers, listings, and contracts.
     """
+    if not neo4j_service.is_available():
+        return {
+            "user_id": str(current_user.id),
+            "owned_producers": [], "traded_producers": [], "contracts": [],
+        }
     try:
         graph = await neo4j_service.get_user_trading_graph(
             user_id=str(current_user.id)
@@ -197,10 +209,10 @@ async def user_trading_graph(
         return graph
     except Exception as e:
         logger.error("Failed to get user trading graph: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+        return {
+            "user_id": str(current_user.id),
+            "owned_producers": [], "traded_producers": [], "contracts": [],
+        }
 
 
 @router.get("/analytics/path/{producer_id}")
@@ -214,23 +226,24 @@ async def find_connection_path(
     
     Useful for understanding trust chains and connections.
     """
+    if not neo4j_service.is_available():
+        return {
+            "from_user": str(current_user.id), "to_producer": producer_id,
+            "path_exists": False, "hops": 0, "path": [],
+        }
     try:
         path = await neo4j_service.find_energy_path(
             from_user_id=str(current_user.id),
             to_producer_id=producer_id,
             max_hops=max_hops,
         )
-        return {
-            "from_user": str(current_user.id),
-            "to_producer": producer_id,
-            **path,
-        }
+        return {"from_user": str(current_user.id), "to_producer": producer_id, **path}
     except Exception as e:
         logger.error("Failed to find path: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+        return {
+            "from_user": str(current_user.id), "to_producer": producer_id,
+            "path_exists": False, "hops": 0, "path": [],
+        }
 
 
 # ══════════════════════════════════════════════════════════════
@@ -339,6 +352,11 @@ async def run_cypher_query(
                 detail="Write operations require admin access"
             )
     
+    if not neo4j_service.is_available():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Neo4j is currently unavailable. The instance may be paused."
+        )
     try:
         result = await neo4j_service.run_custom_query(
             query=query,
@@ -352,6 +370,12 @@ async def run_cypher_query(
             "records": result.get("records", []),
             "count": result.get("count", 0),
         }
+    except (ServiceUnavailable, SessionExpired, RuntimeError, OSError) as e:
+        logger.error("Neo4j connection error during query: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Neo4j is currently unavailable. The instance may be paused or restarting."
+        )
     except Exception as e:
         logger.error("Cypher query failed: %s", e)
         raise HTTPException(

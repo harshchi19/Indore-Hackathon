@@ -39,6 +39,7 @@ async def connect_db() -> AsyncIOMotorDatabase:
     from app.models.payments import Payment
     from app.models.disputes import Dispute
     from app.models.smart_meter import SmartMeterReading
+    from app.models.wallet import WalletTransaction
 
     _client = AsyncIOMotorClient(
         settings.MONGODB_URI,
@@ -54,6 +55,7 @@ async def connect_db() -> AsyncIOMotorDatabase:
         document_models=[
             User, Producer, EnergyListing,
             Contract, Certificate, Payment, Dispute, SmartMeterReading,
+            WalletTransaction,
         ],
     )
 

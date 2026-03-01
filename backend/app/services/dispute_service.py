@@ -86,7 +86,7 @@ async def list_disputes(
         conditions["status"] = status_filter.value
 
     total = await Dispute.find(conditions).count()
-    items = await Dispute.find(conditions).skip(skip).limit(limit).to_list()
+    items = await Dispute.find(conditions).sort("-created_at").skip(skip).limit(limit).to_list()
     return DisputeListResponse(
         total=total,
         items=[_dispute_to_response(d) for d in items],

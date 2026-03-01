@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { walletService, type WalletBalance, type AddFundsResponse } from "@/services/walletService";
+import { walletService, type WalletBalance, type AddFundsResponse, type WalletTransactionsResponse } from "@/services/walletService";
 import { getAccessToken } from "@/services/apiClient";
 
 /* ── Query keys ──────────────────────────────────────── */
@@ -7,6 +7,8 @@ import { getAccessToken } from "@/services/apiClient";
 export const walletKeys = {
   all: ["wallet"] as const,
   balance: () => [...walletKeys.all, "balance"] as const,
+  transactions: (params?: Record<string, unknown>) =>
+    [...walletKeys.all, "transactions", params ?? {}] as const,
 };
 
 /* ── Hooks ───────────────────────────────────────────── */
@@ -16,6 +18,19 @@ export function useWalletBalance() {
     queryKey: walletKeys.balance(),
     queryFn: () => walletService.getBalance(),
     staleTime: 10_000,
+    enabled: !!getAccessToken(),
+  });
+}
+
+export function useWalletTransactions(params?: {
+  txn_type?: string;
+  skip?: number;
+  limit?: number;
+}) {
+  return useQuery<WalletTransactionsResponse, Error>({
+    queryKey: walletKeys.transactions(params as Record<string, unknown>),
+    queryFn: () => walletService.getTransactions(params),
+    staleTime: 15_000,
     enabled: !!getAccessToken(),
   });
 }

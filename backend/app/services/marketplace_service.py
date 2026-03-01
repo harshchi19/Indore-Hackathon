@@ -25,6 +25,7 @@ from app.schemas.energy import (
 from app.schemas.contracts import ContractCreateRequest, ContractSignRequest
 from app.schemas.payments import PaymentInitiateRequest
 from app.services import contract_service, payment_service, wallet_service
+from app.models.wallet import WalletTxnType
 
 logger = get_logger("services.marketplace")
 
@@ -173,39 +174,65 @@ async def buy_energy(
         )
 
     # ── 1c. Deduct buyer wallet balance ────────────────────
-    await wallet_service.deduct_balance(str(buyer.id), total_cost)
+    await wallet_service.deduct_balance(str(buyer.id), total_cost, reference_id=str(listing.id))
 
-    # ── 2. Create contract ─────────────────────────────────
-    contract_req = ContractCreateRequest(
-        buyer_id=str(buyer.id),
-        producer_id=str(listing.owner_id),
-        listing_id=str(listing.id),
-        volume_kwh=payload.quantity_kwh,
-        price_per_kwh=listing.price_per_kwh,
-    )
-    contract_resp = await contract_service.create_contract(contract_req)
-
-    # ── 3. Auto-sign as buyer ──────────────────────────────
+    # ── Steps 2-5 wrapped in try/except for rollback ───────
     try:
-        await contract_service.sign_contract(
-            contract_resp.id, ContractSignRequest(role="buyer")
+        # ── 2. Create contract ─────────────────────────────
+        contract_req = ContractCreateRequest(
+            buyer_id=str(buyer.id),
+            producer_id=str(listing.owner_id),
+            listing_id=str(listing.id),
+            volume_kwh=payload.quantity_kwh,
+            price_per_kwh=listing.price_per_kwh,
         )
+        contract_resp = await contract_service.create_contract(contract_req)
+
+        # ── 3. Auto-sign as buyer ──────────────────────────
+        try:
+            await contract_service.sign_contract(
+                contract_resp.id, ContractSignRequest(role="buyer")
+            )
+        except Exception as exc:
+            logger.warning("Auto-sign failed (non-blocking): %s", exc)
+
+        # ── 4. Initiate payment ────────────────────────────
+        payment_req = PaymentInitiateRequest(
+            contract_id=contract_resp.id,
+            amount_eur=contract_resp.total_amount,
+        )
+        payment_resp = await payment_service.initiate_payment(payment_req, str(buyer.id))
+
+        # ── 5. Deduct quantity / mark listing status ───────
+        listing.quantity_kwh = round(listing.quantity_kwh - payload.quantity_kwh, 6)
+        if listing.quantity_kwh <= 0:
+            listing.status = ListingStatus.SOLD
+            listing.quantity_kwh = 0.0
+        await listing.save()
+
+    except HTTPException:
+        # Re-raise HTTP exceptions (4xx errors from sub-services) after rollback
+        await wallet_service.credit_balance(
+            str(buyer.id), total_cost,
+            txn_type=WalletTxnType.REFUND,
+            reference_id=str(listing.id),
+            description=f"Refund – purchase of {payload.quantity_kwh} kWh failed",
+        )
+        logger.warning("Buy flow failed (HTTP error) – refunded ₹%.2f to user %s", total_cost, buyer.email)
+        raise
     except Exception as exc:
-        logger.warning("Auto-sign failed (non-blocking): %s", exc)
-
-    # ── 4. Initiate payment ────────────────────────────────
-    payment_req = PaymentInitiateRequest(
-        contract_id=contract_resp.id,
-        amount_eur=contract_resp.total_amount,
-    )
-    payment_resp = await payment_service.initiate_payment(payment_req, str(buyer.id))
-
-    # ── 5. Deduct quantity / mark listing status ───────────
-    listing.quantity_kwh = round(listing.quantity_kwh - payload.quantity_kwh, 6)
-    if listing.quantity_kwh <= 0:
-        listing.status = ListingStatus.SOLD
-        listing.quantity_kwh = 0.0
-    await listing.save()
+        # Rollback wallet deduction on unexpected errors
+        await wallet_service.credit_balance(
+            str(buyer.id), total_cost,
+            txn_type=WalletTxnType.REFUND,
+            reference_id=str(listing.id),
+            description=f"Refund – purchase of {payload.quantity_kwh} kWh failed",
+        )
+        logger.error("Buy flow failed – refunded ₹%.2f to user %s: %s", total_cost, buyer.email, exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Purchase failed due to an internal error. Your wallet has been refunded.",
+        )
 
     logger.info(
         "Buy completed: user=%s listing=%s qty=%s kWh → contract=%s payment=%s txn=%s",
