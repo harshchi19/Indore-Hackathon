@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { paymentsService } from "@/services/paymentsService";
+import { getAccessToken } from "@/services/apiClient";
 import type {
   PaymentListResponse,
   PaymentResponse,
@@ -30,6 +31,7 @@ export function usePayments(params?: {
     queryKey: paymentKeys.list(params as Record<string, unknown>),
     queryFn: () => paymentsService.list(params),
     staleTime: 30_000,
+    enabled: !!getAccessToken(),
   });
 }
 

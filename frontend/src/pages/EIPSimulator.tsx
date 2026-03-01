@@ -155,7 +155,7 @@ const EIPSimulator = () => {
     { from: "Rajasthan Wind", to: "Delhi", fromPos: [28, 35], toPos: [38, 28] },
     { from: "Tamil Nadu Wind", to: "Bangalore", fromPos: [55, 82], toPos: [48, 72] },
     { from: "Kerala Hydro", to: "Chennai", fromPos: [48, 90], toPos: [60, 80] },
-    { from: "MP Solar", to: "Pune", fromPos: [42, 48], toPos: [38, 58] },
+    { from: "MP Solar", to: "Indore", fromPos: [42, 48], toPos: [38, 58] },
   ];
 
   return (

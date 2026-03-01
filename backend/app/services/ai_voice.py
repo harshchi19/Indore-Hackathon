@@ -39,29 +39,30 @@ class IndianLanguage(str, Enum):
     TELUGU = "te-IN"
 
 
-# ── Voice Personas (Bulbul v3) ─────────────────────────────────
+# ── Voice Personas (Bulbul v2) ─────────────────────────────────
 class VoicePersona(str, Enum):
-    """Available Sarvam voice personas."""
-    # Male voices
-    ADITYA = "Aditya"      # Professional male
-    RAHUL = "Rahul"        # Casual male
-    ROHAN = "Rohan"        # Young male
-    SHUBH = "Shubh"        # Deep male
-    
+    """Available Sarvam voice personas for Bulbul v2."""
     # Female voices
-    PRIYA = "Priya"        # Professional female
-    RITU = "Ritu"          # Warm female
-    NEHA = "Neha"          # Energetic female
-    POOJA = "Pooja"        # Soft female
-    SIMRAN = "Simran"      # Young female
-    KAVYA = "Kavya"        # Mature female
+    MEERA = "meera"
+    PAVITHRA = "pavithra"
+    MAITREYI = "maitreyi"
+    DIYA = "diya"
+    MISHA = "misha"
+    ANUSHKA = "anushka"
+
+    # Male voices
+    ARJUN = "arjun"
+    AMARTYA = "amartya"
+    NEEL = "neel"
+    VIAN = "vian"
+    ARYAN = "aryan"
 
 
 # ── Models ─────────────────────────────────────────────────────
 class TTSRequest(BaseModel):
     text: str
     language: IndianLanguage = IndianLanguage.HINDI
-    speaker: VoicePersona = VoicePersona.ADITYA
+    speaker: VoicePersona = VoicePersona.MEERA
     pitch: float = 0.0  # -1.0 to 1.0
     pace: float = 1.0   # 0.5 to 2.0
     loudness: float = 1.0  # 0.5 to 2.0
@@ -100,11 +101,11 @@ class SarvamClient:
         self,
         text: str,
         language: str = "hi-IN",
-        speaker: str = "Aditya",
+        speaker: str = "meera",
         pitch: float = 0.0,
         pace: float = 1.0,
         loudness: float = 1.0,
-        model: str = "bulbul:v3"
+        model: str = "bulbul:v1"
     ) -> Dict[str, Any]:
         """
         Convert text to speech using Sarvam Bulbul v3 streaming model.
@@ -131,12 +132,7 @@ class SarvamClient:
                 json=payload
             )
             response.raise_for_status()
-            
-            # Streaming API returns raw audio bytes (MP3)
-            audio_bytes = response.content
-            audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
-            
-            return {"audios": [audio_base64], "format": "mp3"}
+            return response.json()
     
     async def translate(
         self,
@@ -211,7 +207,7 @@ class AIVoiceService:
         try:
             self.default_speaker = VoicePersona(settings.SARVAM_DEFAULT_SPEAKER)
         except (AttributeError, ValueError):
-            self.default_speaker = VoicePersona.PRIYA
+            self.default_speaker = VoicePersona.MEERA
         self.default_language = IndianLanguage.HINDI
     
     @property
@@ -407,7 +403,7 @@ class AIVoiceService:
     def get_available_voices(self) -> List[Dict]:
         """Get list of available voice personas."""
         return [
-            {"id": v.value, "name": v.value, "gender": "male" if v in [VoicePersona.ADITYA, VoicePersona.RAHUL, VoicePersona.ROHAN, VoicePersona.SHUBH] else "female"}
+            {"id": v.value, "name": v.value.title(), "gender": "male" if v in [VoicePersona.ARJUN, VoicePersona.AMARTYA, VoicePersona.NEEL, VoicePersona.VIAN, VoicePersona.ARYAN] else "female"}
             for v in VoicePersona
         ]
     

@@ -150,7 +150,7 @@ function Waveform({ active }: { active: boolean }) {
 export default function AIVoice() {
   const [text, setText] = useState("नमस्ते! वर्डेंट एनर्जी प्लेटफॉर्म में आपका स्वागत है। आज सौर ऊर्जा की कीमत 5.2 रुपये प्रति किलोवाट घंटे है।");
   const [selectedLanguage, setSelectedLanguage] = useState("hi-IN");
-  const [selectedSpeaker, setSelectedSpeaker] = useState("Aditya");
+  const [selectedSpeaker, setSelectedSpeaker] = useState("meera");
   const [selectedGender, setSelectedGender] = useState<"all" | "male" | "female">("all");
   const [ttsResult, setTtsResult] = useState<{ duration: number; language: string; speaker: string } | null>(null);
   const [playingTemplate, setPlayingTemplate] = useState<string | null>(null);

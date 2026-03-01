@@ -45,7 +45,7 @@ const fallbackCityData = [
   { city: "Mumbai", usage: 1800 },
   { city: "Bangalore", usage: 1600 },
   { city: "Chennai", usage: 1200 },
-  { city: "Pune", usage: 900 },
+  { city: "Indore", usage: 900 },
 ];
 
 const Dashboard = () => {
@@ -485,8 +485,8 @@ const Dashboard = () => {
                         ].map((n, i) => (
                           <g key={`node${i}`}>
                             <motion.circle
-                              cx={n.cx} cy={n.cy} r={n.r + 4} fill={n.fill} opacity="0.15"
-                              animate={{ r: [n.r + 2, n.r + 6, n.r + 2] }}
+                              cx={n.cx} cy={n.cy} r={n.r + 6} fill={n.fill}
+                              animate={{ opacity: [0.04, 0.22, 0.04] }}
                               transition={{ duration: 2 + i * 0.3, repeat: Infinity }}
                             />
                             <motion.circle
