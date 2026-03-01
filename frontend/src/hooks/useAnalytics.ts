@@ -42,6 +42,7 @@ export function useMonthlyAnalytics(params: {
     queryKey: analyticsKeys.monthly(params),
     queryFn: () => analyticsService.getMonthly(params),
     staleTime: 60_000,
+    enabled: !!getAccessToken(),
   });
 }
 
@@ -49,7 +50,7 @@ export function useCO2Report(contractId: string) {
   return useQuery<CO2Report, Error>({
     queryKey: analyticsKeys.co2(contractId),
     queryFn: () => analyticsService.getCO2(contractId),
-    enabled: !!contractId,
+    enabled: !!contractId && !!getAccessToken(),
     staleTime: 120_000,
   });
 }
@@ -59,5 +60,6 @@ export function useProducerPerformance(topN = 10) {
     queryKey: analyticsKeys.producers(topN),
     queryFn: () => analyticsService.getProducerPerformance(topN),
     staleTime: 60_000,
+    enabled: !!getAccessToken(),
   });
 }

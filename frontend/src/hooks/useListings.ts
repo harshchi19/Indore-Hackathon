@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { marketplaceService } from "@/services/marketplaceService";
+import { getAccessToken } from "@/services/apiClient";
 import type {
   EnergyListingListResponse,
   EnergyListingResponse,
@@ -58,7 +59,11 @@ export function useBuyEnergy() {
   return useMutation<BuyEnergyResponse, Error, BuyEnergyRequest>({
     mutationFn: (payload) => marketplaceService.buyEnergy(payload),
     onSuccess: () => {
+      // Refresh listings (quantity changed / status → sold) AND contracts / payments
       qc.invalidateQueries({ queryKey: listingKeys.all });
+      qc.invalidateQueries({ queryKey: ["contracts"] });
+      qc.invalidateQueries({ queryKey: ["payments"] });
+      qc.invalidateQueries({ queryKey: ["analytics"] });
     },
   });
 }

@@ -46,4 +46,8 @@ export interface BuyEnergyResponse {
   detail: string;
   listing_id: string;
   quantity_kwh: number;
+  contract_id: string;
+  payment_id: string;
+  transaction_ref: string;
+  total_amount: number;
 }

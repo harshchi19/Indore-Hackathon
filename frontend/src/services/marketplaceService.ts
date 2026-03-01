@@ -26,6 +26,7 @@ export const marketplaceService = {
 
   async listProducers(params?: {
     status?: ProducerStatus;
+    owner_id?: string;
     skip?: number;
     limit?: number;
   }): Promise<ProducerListResponse> {

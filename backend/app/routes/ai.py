@@ -273,8 +273,11 @@ async def speak(request: TTSRequest):
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Invalid language or speaker: {str(e)}")
+    except RuntimeError as e:
+        # Sarvam API errors (bad key, rate limit, unexpected response)
+        raise HTTPException(status_code=503, detail=f"Voice service error: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Voice error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Unexpected voice error: {str(e)}")
 
 
 @router.post("/voice/notification")

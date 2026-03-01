@@ -48,7 +48,7 @@ class EnergyListingListResponse(BaseModel):
     items: List[EnergyListingResponse]
 
 
-# ── Buy placeholder ─────────────────────────────────────────
+# ── Buy ─────────────────────────────────────────────────────
 class BuyEnergyRequest(BaseModel):
     listing_id: str
     quantity_kwh: float = Field(..., gt=0)
@@ -58,7 +58,10 @@ class BuyEnergyResponse(BaseModel):
     detail: str
     listing_id: str
     quantity_kwh: float
-    # TODO: Part B – will include contract_id, payment_id, etc.
+    contract_id: str
+    payment_id: str
+    transaction_ref: str
+    total_amount: float
 
 
 # ── Pricing ─────────────────────────────────────────────────

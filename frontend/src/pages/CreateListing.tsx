@@ -18,6 +18,7 @@ import { PageTransition } from "@/components/ui/PageTransition";
 import { useNavigate } from "react-router-dom";
 import { useCreateListing } from "@/hooks/useListings";
 import { useProducers } from "@/hooks/useProducers";
+import { useAuth } from "@/context/AuthContext";
 import type { EnergySource } from "@/types";
 
 const CreateListing = () => {
@@ -55,7 +56,8 @@ const CreateListing = () => {
   ];
 
   const createMutation = useCreateListing();
-  const { data: producersRes } = useProducers({ limit: 1 });
+  const { user } = useAuth();
+  const { data: producersRes } = useProducers({ owner_id: user?.id, limit: 1 });
   const myProducerId = producersRes?.items?.[0]?.id;
 
   const handleSubmit = async () => {

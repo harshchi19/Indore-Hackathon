@@ -134,7 +134,10 @@ class SarvamClient:
             if not response.is_success:
                 error_body = response.text
                 raise RuntimeError(f"Sarvam API error {response.status_code}: {error_body}")
-            return response.json()
+            try:
+                return response.json()
+            except Exception as e:
+                raise RuntimeError(f"Sarvam API returned invalid JSON: {e} — body: {response.text[:200]}")
     
     async def translate(
         self,
@@ -254,7 +257,12 @@ class AIVoiceService:
         
         # Extract audio from response
         if "audios" in response and response["audios"]:
-            audio_base64 = response["audios"][0]
+            raw = response["audios"][0]
+            # Sarvam may return plain string or dict {"audio": "..."}
+            if isinstance(raw, dict):
+                audio_base64 = raw.get("audio") or raw.get("audio_base64") or raw.get("data", "")
+            else:
+                audio_base64 = raw
             # Estimate duration (rough calculation)
             audio_bytes = len(base64.b64decode(audio_base64))
             duration = audio_bytes / (22050 * 2)  # 22050 Hz, 16-bit
@@ -267,7 +275,7 @@ class AIVoiceService:
                 speaker=speaker.value
             )
         
-        raise RuntimeError("No audio generated")
+        raise RuntimeError(f"No audio generated. Sarvam response keys: {list(response.keys())}")
     
     async def speak_notification(
         self,

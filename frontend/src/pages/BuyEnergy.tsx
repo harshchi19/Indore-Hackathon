@@ -292,11 +292,18 @@ const BuyEnergy = () => {
                     >
                       {buyMutation.isPending ? "Processing..." : "Create Contract"} <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
-                    {buyMutation.isSuccess && (
-                      <p className="text-xs text-primary mt-2 text-center">Purchase successful!</p>
+                    {buyMutation.isSuccess && buyMutation.data && (
+                      <div className="mt-3 p-3 rounded-lg bg-primary/10 border border-primary/20 space-y-1">
+                        <p className="text-xs text-primary font-semibold text-center">✓ Purchase Successful!</p>
+                        <p className="text-[10px] text-muted-foreground truncate">Contract: {buyMutation.data.contract_id}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">Ref: {buyMutation.data.transaction_ref}</p>
+                        <p className="text-[10px] text-primary font-medium">Total Paid: ₹{buyMutation.data.total_amount?.toLocaleString()}</p>
+                      </div>
                     )}
                     {buyMutation.isError && (
-                      <p className="text-xs text-destructive mt-2 text-center">Purchase failed. Try again.</p>
+                      <p className="text-xs text-destructive mt-2 text-center">
+                        {(buyMutation.error as Error)?.message || "Purchase failed. Try again."}
+                      </p>
                     )}
                   </motion.div>
                 )}

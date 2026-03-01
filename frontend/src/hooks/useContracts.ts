@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { contractsService } from "@/services/contractsService";
+import { getAccessToken } from "@/services/apiClient";
 import type {
   ContractListResponse,
   ContractResponse,
@@ -31,6 +32,7 @@ export function useContracts(params?: {
     queryKey: contractKeys.list(params as Record<string, unknown>),
     queryFn: () => contractsService.list(params),
     staleTime: 30_000,
+    enabled: !!getAccessToken(),
   });
 }
 

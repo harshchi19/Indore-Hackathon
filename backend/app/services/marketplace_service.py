@@ -1,7 +1,6 @@
 """
-Verdant Backend – Marketplace service (Part A)
-Listing CRUD and buy-placeholder.
-Contract creation is owned by Part B.
+Verdant Backend – Marketplace service (Part A + B integrated)
+Listing CRUD and fully-implemented buy flow.
 """
 
 from __future__ import annotations
@@ -23,6 +22,9 @@ from app.schemas.energy import (
     EnergyListingListResponse,
     EnergyListingResponse,
 )
+from app.schemas.contracts import ContractCreateRequest, ContractSignRequest
+from app.schemas.payments import PaymentInitiateRequest
+from app.services import contract_service, payment_service
 
 logger = get_logger("services.marketplace")
 
@@ -119,13 +121,24 @@ async def buy_energy(
     buyer: User,
 ) -> BuyEnergyResponse:
     """
-    Placeholder buy flow.
-
-    Validates the listing then delegates contract creation to **Part B**.
+    Full buy flow:
+      1. Validate listing (active, sufficient quantity)
+      2. Create a contract (buyer ↔ listing owner)
+      3. Auto-sign contract as buyer
+      4. Initiate payment (escrow lock)
+      5. Deduct quantity from listing; mark SOLD if fully consumed
     """
-    listing = await EnergyListing.get(PydanticObjectId(payload.listing_id))
+    # ── 1. Validate listing ────────────────────────────────
+    try:
+        listing_oid = PydanticObjectId(payload.listing_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="Invalid listing_id")
+
+    listing = await EnergyListing.get(listing_oid)
     if listing is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Listing not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Listing not found")
 
     if listing.status != ListingStatus.ACTIVE:
         raise HTTPException(
@@ -142,29 +155,63 @@ async def buy_energy(
     if payload.quantity_kwh > listing.quantity_kwh:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Requested quantity exceeds available supply",
+            detail=f"Requested {payload.quantity_kwh} kWh exceeds available {listing.quantity_kwh} kWh",
         )
 
-    # ── TODO: Part B service integration ──────────────────
-    # contract = await contract_service.create_contract(
-    #     buyer_id=buyer.id,
-    #     listing_id=listing.id,
-    #     quantity_kwh=payload.quantity_kwh,
-    #     price_per_kwh=listing.price_per_kwh,
-    # )
-    # payment = await payment_service.initiate_payment(contract)
-    # certificate = await certificate_service.issue(contract)
-    # ──────────────────────────────────────────────────────
+    if str(listing.owner_id) == str(buyer.id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot purchase your own listing",
+        )
+
+    # ── 2. Create contract ─────────────────────────────────
+    contract_req = ContractCreateRequest(
+        buyer_id=str(buyer.id),
+        producer_id=str(listing.owner_id),
+        listing_id=str(listing.id),
+        volume_kwh=payload.quantity_kwh,
+        price_per_kwh=listing.price_per_kwh,
+    )
+    contract_resp = await contract_service.create_contract(contract_req)
+
+    # ── 3. Auto-sign as buyer ──────────────────────────────
+    try:
+        await contract_service.sign_contract(
+            contract_resp.id, ContractSignRequest(role="buyer")
+        )
+    except Exception as exc:
+        logger.warning("Auto-sign failed (non-blocking): %s", exc)
+
+    # ── 4. Initiate payment ────────────────────────────────
+    payment_req = PaymentInitiateRequest(
+        contract_id=contract_resp.id,
+        amount_eur=contract_resp.total_amount,
+    )
+    payment_resp = await payment_service.initiate_payment(payment_req, str(buyer.id))
+
+    # ── 5. Deduct quantity / mark listing status ───────────
+    listing.quantity_kwh = round(listing.quantity_kwh - payload.quantity_kwh, 6)
+    if listing.quantity_kwh <= 0:
+        listing.status = ListingStatus.SOLD
+        listing.quantity_kwh = 0.0
+    await listing.save()
 
     logger.info(
-        "Buy placeholder: user=%s listing=%s qty=%s kWh",
+        "Buy completed: user=%s listing=%s qty=%s kWh → contract=%s payment=%s txn=%s",
         buyer.email,
         str(listing.id),
         payload.quantity_kwh,
+        contract_resp.id,
+        payment_resp.id,
+        payment_resp.transaction_ref,
     )
 
     return BuyEnergyResponse(
-        detail="Purchase request received. Contract creation pending (Part B integration).",
+        detail="Purchase successful. Contract created and payment escrowed.",
         listing_id=str(listing.id),
         quantity_kwh=payload.quantity_kwh,
+        contract_id=contract_resp.id,
+        payment_id=payment_resp.id,
+        transaction_ref=payment_resp.transaction_ref or "",
+        total_amount=contract_resp.total_amount,
     )
