@@ -24,7 +24,7 @@ services:
     # ── Environment Variables ─────────────────────────────
     envVars:
       - key: ENVIRONMENT
-        value: production
+        value: staging
 
       - key: DEBUG
         value: "false"
@@ -61,3 +61,26 @@ services:
 
       - key: REFRESH_TOKEN_EXPIRE_DAYS
         value: "7"
+
+      # ── AI Services ──────────────────────────────────────
+      - key: GROQ_API_KEY
+        sync: false  # Set in Render dashboard (secret)
+
+      - key: GEMINI_API_KEY
+        sync: false  # Set in Render dashboard (secret)
+
+      - key: SARVAM_API_KEY
+        sync: false  # Set in Render dashboard (secret)
+
+      # ── Neo4j ─────────────────────────────────────────────
+      - key: ENABLE_NEO4J
+        value: "false"  # Change to "true" after configuring Neo4j Aura
+
+      - key: NEO4J_URI
+        sync: false  # Set in Render dashboard (secret)
+
+      - key: NEO4J_USERNAME
+        sync: false
+
+      - key: NEO4J_PASSWORD
+        sync: false

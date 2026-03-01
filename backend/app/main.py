@@ -149,6 +149,25 @@ app.include_router(smart_meter_router, prefix=settings.API_V1_PREFIX)
 app.include_router(disputes_router, prefix=settings.API_V1_PREFIX)
 app.include_router(analytics_router, prefix=settings.API_V1_PREFIX)
 
+# ── Routers (AI Services) ────────────────────────────────────
+try:
+    from app.routes.ai import router as ai_router
+    app.include_router(ai_router, prefix=settings.API_V1_PREFIX)
+    logger.info("AI routes registered (/api/v1/ai)")
+except Exception as exc:  # pragma: no cover
+    logger.warning("AI routes not loaded: %s", exc)
+
+# ── Routers (Neo4j / Graph) ──────────────────────────────────
+if settings.ENABLE_NEO4J:
+    try:
+        from app.routes.neo4j import router as neo4j_router
+        app.include_router(neo4j_router, prefix=settings.API_V1_PREFIX)
+        logger.info("Neo4j graph routes registered (/api/v1/graph)")
+    except Exception as exc:  # pragma: no cover
+        logger.warning("Neo4j routes not loaded: %s", exc)
+else:
+    logger.info("Neo4j routes skipped (ENABLE_NEO4J=false)")
+
 
 # ── Health check ────────────────────────────────────────────
 @app.get("/health", tags=["Health"])

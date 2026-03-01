@@ -13,7 +13,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, status, Depends
 
-from app.core.auth import get_current_user
+from app.core.auth import _get_current_user as get_current_user
 from app.core.logging import get_logger
 from app.models.users import User
 from app.services import neo4j_service

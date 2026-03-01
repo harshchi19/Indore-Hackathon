@@ -9,6 +9,8 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
+from typing import Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
@@ -88,6 +90,20 @@ class Settings(BaseSettings):
     # ── Pricing Engine ────────────────────────────────────
     PRICING_UPDATE_INTERVAL_SECONDS: int = 10
     BASE_ENERGY_PRICE_KWH: float = 0.12  # USD per kWh
+
+    # ── AI Services (Groq + Gemini + Sarvam) ──────────────
+    # Set these in your .env / Render dashboard to enable AI endpoints.
+    GROQ_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
+    SARVAM_API_KEY: Optional[str] = None
+
+    # ── Neo4j (Graph Database) ────────────────────────────
+    NEO4J_URI: str = "neo4j://localhost:7687"
+    NEO4J_USERNAME: str = "neo4j"
+    NEO4J_PASSWORD: str = "password"
+    NEO4J_DATABASE: str = "neo4j"
+    # Set to True only when a real Neo4j instance is configured
+    ENABLE_NEO4J: bool = False
 
 
 @lru_cache()
