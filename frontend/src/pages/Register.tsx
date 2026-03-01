@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Zap, Mail, Lock, User, Building2, ArrowRight, Eye, EyeOff, Sun, ShoppingBag } from "lucide-react";
+import { Zap, Mail, Lock, User, ArrowRight, Eye, EyeOff, Sun, ShoppingBag } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -34,7 +34,7 @@ const Register = () => {
     }
     setIsLoading(true);
     try {
-      const role = formData.userType === "both" ? "consumer" : formData.userType;
+      const role = formData.userType;
       await register(formData.email, formData.password, formData.name, role);
       navigate("/kyc");
     } catch (err: any) {
@@ -215,24 +215,6 @@ const Register = () => {
                         <div>
                           <p className="font-medium text-foreground">Sell Clean Energy</p>
                           <p className="text-xs text-muted-foreground">Producer / Generator</p>
-                        </div>
-                      </label>
-
-                      <label
-                        htmlFor="both"
-                        className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-all ${
-                          formData.userType === "both"
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        <RadioGroupItem value="both" id="both" />
-                        <div className="w-10 h-10 rounded-lg bg-saffron/10 flex items-center justify-center">
-                          <Building2 className="w-5 h-5 text-saffron" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">Both</p>
-                          <p className="text-xs text-muted-foreground">Prosumer / Business</p>
                         </div>
                       </label>
                     </RadioGroup>

@@ -43,6 +43,7 @@ import AIAssistant from "./pages/AIAssistant";
 import AIAnalytics from "./pages/AIAnalytics";
 import AIVoice from "./pages/AIVoice";
 import NetworkInsights from "./pages/NetworkInsights";
+import SsoCallback from "./pages/SsoCallback";
 
 const queryClient = createQueryClientConfig();
 
@@ -64,6 +65,7 @@ const App = () => (
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/sso-callback" element={<SsoCallback />} />
           <Route path="/help" element={<Help />} />
 
           {/* Protected routes */}

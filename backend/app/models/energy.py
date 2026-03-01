@@ -21,7 +21,7 @@ class EnergyListing(TimestampedDocument):
     title: str = Field(..., min_length=3, max_length=200)
     description: Optional[str] = Field(default=None, max_length=2000)
     energy_source: EnergySource
-    quantity_kwh: float = Field(..., gt=0, description="Energy offered in kWh")
+    quantity_kwh: float = Field(..., ge=0, description="Energy offered in kWh")
     price_per_kwh: float = Field(..., gt=0, description="Asking price in USD/kWh")
     min_purchase_kwh: float = Field(default=1.0, gt=0)
     status: ListingStatus = ListingStatus.ACTIVE

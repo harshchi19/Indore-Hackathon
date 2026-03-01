@@ -22,8 +22,8 @@ export type VoiceLanguage =
   | "ml-IN" | "mr-IN" | "od-IN" | "pa-IN" | "ta-IN" | "te-IN";
 
 export type VoiceSpeaker = 
-  | "aditya" | "rahul" | "rohan" | "shubh" 
-  | "priya" | "ritu" | "neha" | "pooja" | "simran" | "kavya";
+  | "aditya" | "rahul" | "rohan" | "shubh" | "amit" | "dev" | "kabir" | "varun"
+  | "priya" | "ritu" | "neha" | "pooja" | "simran" | "kavya" | "anushka" | "shreya";
 
 export type NotificationType = 
   | "welcome" | "contract_created" | "payment_success" 
@@ -80,12 +80,18 @@ const SPEAKER_INFO: Record<VoiceSpeaker, { name: string; gender: "male" | "femal
   rahul: { name: "Rahul", gender: "male" },
   rohan: { name: "Rohan", gender: "male" },
   shubh: { name: "Shubh", gender: "male" },
+  amit: { name: "Amit", gender: "male" },
+  dev: { name: "Dev", gender: "male" },
+  kabir: { name: "Kabir", gender: "male" },
+  varun: { name: "Varun", gender: "male" },
   priya: { name: "Priya", gender: "female" },
   ritu: { name: "Ritu", gender: "female" },
   neha: { name: "Neha", gender: "female" },
   pooja: { name: "Pooja", gender: "female" },
   simran: { name: "Simran", gender: "female" },
   kavya: { name: "Kavya", gender: "female" },
+  anushka: { name: "Anushka", gender: "female" },
+  shreya: { name: "Shreya", gender: "female" },
 };
 
 export { LANGUAGE_NAMES, SPEAKER_INFO };
@@ -133,6 +139,15 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const userInteractedRef = useRef(false);
+
+  // Track first user interaction so we can respect autoplay policy
+  useEffect(() => {
+    const markInteracted = () => { userInteractedRef.current = true; };
+    const events = ["click", "touchstart", "keydown"] as const;
+    events.forEach(e => window.addEventListener(e, markInteracted, { once: true, capture: true }));
+    return () => { events.forEach(e => window.removeEventListener(e, markInteracted, true)); };
+  }, []);
 
   // Persist settings
   useEffect(() => {
@@ -215,11 +230,23 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
           setIsPlaying(false);
           reject(e);
         };
-        audio.play().catch(reject);
+        audio.play().catch((err) => {
+          // Gracefully handle browser autoplay policy blocking
+          if (err?.name === "NotAllowedError") {
+            URL.revokeObjectURL(url);
+            setIsPlaying(false);
+            resolve(); // swallow — not a real error
+          } else {
+            reject(err);
+          }
+        });
       });
     } catch (error) {
       setIsPlaying(false);
-      console.error("Voice playback failed:", error);
+      // Don't log autoplay policy errors — they're expected on first load
+      if ((error as DOMException)?.name !== "NotAllowedError") {
+        console.error("Voice playback failed:", error);
+      }
       throw error;
     }
   }, [settings.volume]);
@@ -258,6 +285,8 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     params?: Record<string, unknown>
   ) => {
     if (!settings.enabled || !settings.autoPlayNotifications) return;
+    // Skip if user hasn't interacted yet (browser will block autoplay)
+    if (!userInteractedRef.current) return;
     
     setIsSpeaking(true);
     try {
@@ -267,8 +296,13 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         params,
       });
       await playAudio(response.audio_base64, response.audio_format);
-    } catch (error) {
-      console.error("Notification voice failed:", error);
+    } catch (error: any) {
+      // Silently ignore voice service errors (503 = unavailable, 500 = API issue)
+      // Voice is a nice-to-have; don't spam the console on every notification
+      const status = error?.response?.status;
+      if (status !== 500 && status !== 503) {
+        console.warn("Notification voice unavailable");
+      }
     } finally {
       setIsSpeaking(false);
     }

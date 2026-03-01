@@ -29,8 +29,8 @@ const POPULAR_SPEAKERS = [
   { name: "Priya", gender: "Female" },
   { name: "Rahul", gender: "Male" },
   { name: "Ritu", gender: "Female" },
-  { name: "Rohan", gender: "Male" },
-  { name: "Neha", gender: "Female" },
+  { name: "Shubh", gender: "Male" },
+  { name: "Anushka", gender: "Female" },
 ];
 
 interface AIVoicePanelProps {
@@ -40,7 +40,7 @@ interface AIVoicePanelProps {
 const AIVoicePanel = ({ className = "" }: AIVoicePanelProps) => {
   const [text, setText] = useState("");
   const [language, setLanguage] = useState("hi-IN");
-  const [speaker, setSpeaker] = useState("Aditya");
+  const [speaker, setSpeaker] = useState("Priya");
   const [isPlaying, setIsPlaying] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);

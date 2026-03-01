@@ -11,17 +11,22 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
+import { UserRole } from "@/types/enums";
 
 interface NavItem {
   title: string;
   url: string;
   icon: React.ComponentType<{ className?: string }>;
+  /** Which roles can see this item. If omitted, visible to all roles. */
+  roles?: UserRole[];
 }
 
 interface NavSection {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   items: NavItem[];
+  /** Which roles can see this entire section. If omitted, visible to all roles. */
+  roles?: UserRole[];
 }
 
 const navSections: NavSection[] = [
@@ -38,12 +43,12 @@ const navSections: NavSection[] = [
     label: "Trading",
     icon: ArrowLeftRight,
     items: [
-      { title: "Buy Energy", url: "/buy-energy", icon: ShoppingBag },
-      { title: "Sell Energy", url: "/producer", icon: Factory },
-      { title: "Create Listing", url: "/create-listing", icon: PlusCircle },
+      { title: "Buy Energy", url: "/buy-energy", icon: ShoppingBag, roles: [UserRole.CONSUMER, UserRole.ADMIN] },
+      { title: "Sell Energy", url: "/producer", icon: Factory, roles: [UserRole.PRODUCER, UserRole.ADMIN] },
+      { title: "Create Listing", url: "/create-listing", icon: PlusCircle, roles: [UserRole.PRODUCER, UserRole.ADMIN] },
       { title: "Contracts", url: "/contracts", icon: FileText },
       { title: "Trading History", url: "/history", icon: History },
-      { title: "Pricing & Auctions", url: "/pricing", icon: DollarSign },
+      { title: "Pricing & Auctions", url: "/pricing", icon: DollarSign, roles: [UserRole.PRODUCER, UserRole.ADMIN] },
     ],
   },
   {
@@ -52,7 +57,7 @@ const navSections: NavSection[] = [
     items: [
       { title: "Wallet", url: "/wallet", icon: Wallet },
       { title: "Payments", url: "/payments", icon: CreditCard },
-      { title: "Investor Zone", url: "/investor", icon: TrendingUp },
+      { title: "Investor Zone", url: "/investor", icon: TrendingUp, roles: [UserRole.PRODUCER, UserRole.ADMIN] },
     ],
   },
   {
@@ -92,8 +97,8 @@ const navSections: NavSection[] = [
     label: "Administration",
     icon: Wrench,
     items: [
-      { title: "Admin Console", url: "/admin", icon: Settings },
-      { title: "Disputes", url: "/disputes", icon: Scale },
+      { title: "Admin Console", url: "/admin", icon: Settings, roles: [UserRole.ADMIN] },
+      { title: "Disputes", url: "/disputes", icon: Scale, roles: [UserRole.ADMIN] },
       { title: "Help & FAQ", url: "/help", icon: HelpCircle },
     ],
   },
@@ -112,6 +117,18 @@ export function AppSidebar() {
     Administration: false,
   });
   const { user, isAuthenticated, logout } = useAuth();
+  const userRole = user?.role as UserRole | undefined;
+
+  // Filter sections and items based on the user's role
+  const filteredSections = navSections
+    .filter((section) => !section.roles || !userRole || section.roles.includes(userRole))
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (item) => !item.roles || !userRole || item.roles.includes(userRole)
+      ),
+    }))
+    .filter((section) => section.items.length > 0);
 
   const toggleSection = (label: string) => {
     setExpandedSections((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -154,7 +171,7 @@ export function AppSidebar() {
         "flex-1 py-3 overflow-y-auto scrollbar-thin",
         collapsed ? "px-2" : "px-3"
       )}>
-        {navSections.map((section) => {
+        {filteredSections.map((section) => {
           const sectionActive = section.items.some(item => location.pathname === item.url);
           
           return (
@@ -273,11 +290,23 @@ export function AppSidebar() {
               </div>
               {!collapsed && (
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {user.full_name || user.email?.split("@")[0] || "User"}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {user.full_name || user.email?.split("@")[0] || "User"}
+                    </p>
+                    {userRole && (
+                      <span className={cn(
+                        "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider flex-shrink-0",
+                        userRole === UserRole.ADMIN && "bg-red-500/15 text-red-400",
+                        userRole === UserRole.PRODUCER && "bg-amber-500/15 text-amber-400",
+                        userRole === UserRole.CONSUMER && "bg-emerald-500/15 text-emerald-400",
+                      )}>
+                        {userRole}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground truncate">
-                    {user.email || "Producer"}
+                    {user.email}
                   </p>
                 </div>
               )}

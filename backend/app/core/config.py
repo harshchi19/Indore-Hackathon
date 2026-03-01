@@ -96,7 +96,7 @@ class Settings(BaseSettings):
     GROQ_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
     SARVAM_API_KEY: Optional[str] = None
-    SARVAM_DEFAULT_SPEAKER: str = "Priya"
+    SARVAM_DEFAULT_SPEAKER: str = "priya"
 
     # ── Neo4j (Graph Database) ────────────────────────────
     NEO4J_URI: str = "neo4j://localhost:7687"

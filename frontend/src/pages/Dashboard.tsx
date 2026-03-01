@@ -54,11 +54,24 @@ const Dashboard = () => {
   const { welcomeUser, isEnabled } = useVoiceNotifications();
   const hasWelcomed = useRef(false);
 
-  // Welcome notification on first visit
+  // Welcome notification — deferred until user interacts (autoplay policy)
   useEffect(() => {
     if (!isLoading && !hasWelcomed.current && isEnabled) {
-      hasWelcomed.current = true;
-      welcomeUser();
+      const trigger = () => {
+        if (!hasWelcomed.current) {
+          hasWelcomed.current = true;
+          welcomeUser();
+        }
+      };
+      // If user already clicked somewhere, fire immediately
+      const t = setTimeout(trigger, 800);
+      // Also listen for first interaction
+      const events = ["click", "touchstart", "keydown"] as const;
+      events.forEach(e => window.addEventListener(e, trigger, { once: true }));
+      return () => {
+        clearTimeout(t);
+        events.forEach(e => window.removeEventListener(e, trigger));
+      };
     }
   }, [isLoading, welcomeUser, isEnabled]);
 

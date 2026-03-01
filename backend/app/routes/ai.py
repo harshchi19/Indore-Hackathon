@@ -68,7 +68,7 @@ class SustainabilityRequest(BaseModel):
 class TTSRequest(BaseModel):
     text: str
     language: str = "hi-IN"
-    speaker: str = "Aditya"
+    speaker: str = "priya"
 
 
 class NotificationRequest(BaseModel):
@@ -264,7 +264,11 @@ async def speak(request: TTSRequest):
     
     try:
         language = IndianLanguage(request.language)
-        speaker = VoicePersona(request.speaker)
+        # Accept speaker as lowercase, with fallback to meera
+        try:
+            speaker = VoicePersona(request.speaker.lower())
+        except ValueError:
+            speaker = VoicePersona.PRIYA
         
         return await voice.speak(
             text=request.text,

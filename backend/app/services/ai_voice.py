@@ -39,30 +39,65 @@ class IndianLanguage(str, Enum):
     TELUGU = "te-IN"
 
 
-# ── Voice Personas (Bulbul v2) ─────────────────────────────────
+# ── Voice Personas (Bulbul v3) ─────────────────────────────────
 class VoicePersona(str, Enum):
-    """Available Sarvam voice personas for Bulbul v2."""
+    """Available Sarvam voice personas for Bulbul v3."""
     # Female voices
-    MEERA = "meera"
-    PAVITHRA = "pavithra"
-    MAITREYI = "maitreyi"
-    DIYA = "diya"
-    MISHA = "misha"
     ANUSHKA = "anushka"
+    MANISHA = "manisha"
+    VIDYA = "vidya"
+    ARYA = "arya"
+    RITU = "ritu"
+    PRIYA = "priya"
+    NEHA = "neha"
+    POOJA = "pooja"
+    SIMRAN = "simran"
+    KAVYA = "kavya"
+    ISHITA = "ishita"
+    SHREYA = "shreya"
+    ROOPA = "roopa"
+    KAVITHA = "kavitha"
+    SHRUTI = "shruti"
+    SUHANI = "suhani"
+    TANYA = "tanya"
+    AMELIA = "amelia"
+    SOPHIA = "sophia"
+    RUPALI = "rupali"
 
     # Male voices
-    ARJUN = "arjun"
-    AMARTYA = "amartya"
-    NEEL = "neel"
-    VIAN = "vian"
-    ARYAN = "aryan"
+    ABHILASH = "abhilash"
+    KARUN = "karun"
+    HITESH = "hitesh"
+    ADITYA = "aditya"
+    RAHUL = "rahul"
+    ROHAN = "rohan"
+    AMIT = "amit"
+    DEV = "dev"
+    RATAN = "ratan"
+    VARUN = "varun"
+    MANAN = "manan"
+    SUMIT = "sumit"
+    KABIR = "kabir"
+    AAYAN = "aayan"
+    SHUBH = "shubh"
+    ASHUTOSH = "ashutosh"
+    ADVAIT = "advait"
+    ANAND = "anand"
+    TARUN = "tarun"
+    SUNNY = "sunny"
+    MANI = "mani"
+    GOKUL = "gokul"
+    VIJAY = "vijay"
+    MOHIT = "mohit"
+    REHAN = "rehan"
+    SOHAM = "soham"
 
 
 # ── Models ─────────────────────────────────────────────────────
 class TTSRequest(BaseModel):
     text: str
     language: IndianLanguage = IndianLanguage.HINDI
-    speaker: VoicePersona = VoicePersona.MEERA
+    speaker: VoicePersona = VoicePersona.PRIYA
     pitch: float = 0.0  # -1.0 to 1.0
     pace: float = 1.0   # 0.5 to 2.0
     loudness: float = 1.0  # 0.5 to 2.0
@@ -70,7 +105,7 @@ class TTSRequest(BaseModel):
 
 class TTSResponse(BaseModel):
     audio_base64: str
-    audio_format: str = "wav"
+    audio_format: str = "mp3"
     duration_seconds: float
     language: str
     speaker: str
@@ -101,23 +136,22 @@ class SarvamClient:
         self,
         text: str,
         language: str = "hi-IN",
-        speaker: str = "meera",
+        speaker: str = "priya",
         pitch: float = 0.0,
         pace: float = 1.0,
         loudness: float = 1.0,
-        model: str = "bulbul:v1"
+        model: str = "bulbul:v3"
     ) -> Dict[str, Any]:
         """
-        Convert text to speech using Sarvam Bulbul v3 streaming model.
+        Convert text to speech using Sarvam Bulbul v3 streaming endpoint.
         
-        Returns:
-            Dict with 'audios' list containing base64 encoded audio
+        The streaming endpoint returns raw MP3 bytes.
+        We encode them to base64 and return in our standard format.
         """
-        # New API format for bulbul:v3
         payload = {
             "text": text,
             "target_language_code": language,
-            "speaker": speaker.lower(),  # Sarvam API requires lowercase speaker names
+            "speaker": speaker.lower(),
             "model": model,
             "pace": pace,
             "speech_sample_rate": 22050,
@@ -134,10 +168,23 @@ class SarvamClient:
             if not response.is_success:
                 error_body = response.text
                 raise RuntimeError(f"Sarvam API error {response.status_code}: {error_body}")
-            try:
-                return response.json()
-            except Exception as e:
-                raise RuntimeError(f"Sarvam API returned invalid JSON: {e} — body: {response.text[:200]}")
+            
+            # Streaming endpoint returns raw audio bytes (MP3)
+            audio_bytes = response.content
+            if not audio_bytes or len(audio_bytes) < 100:
+                raise RuntimeError(f"Sarvam API returned empty or too-small audio ({len(audio_bytes)} bytes)")
+            
+            audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
+            # Estimate duration: MP3 at ~128kbps = 16KB/s
+            duration = len(audio_bytes) / 16000
+            
+            return {
+                "audio_base64": audio_base64,
+                "audio_format": "mp3",
+                "duration_seconds": round(duration, 2),
+                "language": language,
+                "speaker": speaker
+            }
     
     async def translate(
         self,
@@ -212,7 +259,7 @@ class AIVoiceService:
         try:
             self.default_speaker = VoicePersona(settings.SARVAM_DEFAULT_SPEAKER)
         except (AttributeError, ValueError):
-            self.default_speaker = VoicePersona.MEERA
+            self.default_speaker = VoicePersona.PRIYA
         self.default_language = IndianLanguage.HINDI
     
     @property
@@ -255,29 +302,14 @@ class AIVoiceService:
             pace=pace
         )
         
-        # Extract audio from response
-        if "audios" in response and response["audios"]:
-            raw = response["audios"][0]
-            # Sarvam may return plain string or dict {"audio": "..."}
-            if isinstance(raw, dict):
-                audio_base64 = raw.get("audio") or raw.get("audio_base64") or raw.get("data", "")
-            else:
-                audio_base64 = raw
-            audio_format = response.get("format", "mp3")
-            # Estimate duration (rough calculation)
-            audio_bytes = len(base64.b64decode(audio_base64))
-            # MP3 at ~128kbps = 16KB/s, so duration ≈ bytes / 16000
-            duration = audio_bytes / 16000
-            
-            return TTSResponse(
-                audio_base64=audio_base64,
-                audio_format=audio_format,
-                duration_seconds=round(duration, 2),
-                language=language.value,
-                speaker=speaker.value
-            )
-        
-        raise RuntimeError(f"No audio generated. Sarvam response keys: {list(response.keys())}")
+        # Response is already in our standard format from the updated client
+        return TTSResponse(
+            audio_base64=response["audio_base64"],
+            audio_format=response.get("audio_format", "mp3"),
+            duration_seconds=response.get("duration_seconds", 0.0),
+            language=language.value,
+            speaker=speaker.value
+        )
     
     async def speak_notification(
         self,
@@ -412,8 +444,19 @@ class AIVoiceService:
     
     def get_available_voices(self) -> List[Dict]:
         """Get list of available voice personas."""
+        male_voices = {
+            VoicePersona.ABHILASH, VoicePersona.KARUN, VoicePersona.HITESH,
+            VoicePersona.ADITYA, VoicePersona.RAHUL, VoicePersona.ROHAN,
+            VoicePersona.AMIT, VoicePersona.DEV, VoicePersona.RATAN,
+            VoicePersona.VARUN, VoicePersona.MANAN, VoicePersona.SUMIT,
+            VoicePersona.KABIR, VoicePersona.AAYAN, VoicePersona.SHUBH,
+            VoicePersona.ASHUTOSH, VoicePersona.ADVAIT, VoicePersona.ANAND,
+            VoicePersona.TARUN, VoicePersona.SUNNY, VoicePersona.MANI,
+            VoicePersona.GOKUL, VoicePersona.VIJAY, VoicePersona.MOHIT,
+            VoicePersona.REHAN, VoicePersona.SOHAM,
+        }
         return [
-            {"id": v.value, "name": v.value.title(), "gender": "male" if v in [VoicePersona.ARJUN, VoicePersona.AMARTYA, VoicePersona.NEEL, VoicePersona.VIAN, VoicePersona.ARYAN] else "female"}
+            {"id": v.value, "name": v.value.title(), "gender": "male" if v in male_voices else "female"}
             for v in VoicePersona
         ]
     
