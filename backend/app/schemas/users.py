@@ -98,6 +98,7 @@ class UserResponse(BaseModel):
     full_name: str
     role: UserRole
     is_active: bool
+    wallet_balance: float = 0.0
     created_at: datetime
     updated_at: Optional[datetime] = None
 

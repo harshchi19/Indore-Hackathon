@@ -9,6 +9,7 @@ import { useState, useMemo } from "react";
 import { useListings } from "@/hooks/useListings";
 import { Link } from "react-router-dom";
 import type { EnergySource } from "@/types";
+import { toast } from "sonner";
 
 const sourceIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   solar: Sun, wind: Wind, hydro: Droplets, biomass: Zap, geothermal: Zap,
@@ -198,7 +199,7 @@ const Marketplace = () => {
                       <Link to={`/buy-energy?listing=${item.listingId}`} className="flex-1">
                         <Button variant="default" size="sm" className="w-full text-xs transition-all duration-200 group-hover:shadow-md group-hover:shadow-primary/15">Buy Energy</Button>
                       </Link>
-                      <Button variant="outline" size="sm" className="text-xs">Details</Button>
+                      <Button variant="outline" size="sm" className="text-xs" onClick={() => toast.info(`Details for ${item.name} - ${item.energy} available`)}>Details</Button>
                     </div>
                   </motion.div>
                 ))}
@@ -209,7 +210,7 @@ const Marketplace = () => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 }}
-                className="relative overflow-hidden bg-card rounded-xl p-6 border border-border h-fit sticky top-[80px]"
+                className="overflow-hidden bg-card rounded-xl p-6 border border-border h-fit sticky top-[80px]"
               >
                 {/* Glow behind panel */}
                 <div className="absolute -top-10 -right-10 w-40 h-40 opacity-[0.06] blur-[60px] rounded-full" style={{ background: "hsl(142 72% 40%)" }} />

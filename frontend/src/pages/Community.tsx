@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { PageTransition } from "@/components/ui/PageTransition";
+import { toast } from "sonner";
 
 interface CommunityMember {
   id: string;
@@ -224,7 +225,7 @@ const Community = () => {
                 <h1 className="text-2xl font-heading font-bold text-foreground">Community</h1>
                 <p className="text-sm text-muted-foreground mt-1">Connect with fellow sustainability champions</p>
               </div>
-              <Button>
+              <Button onClick={() => toast.info("Post creation coming soon")}>
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Create Post
               </Button>
@@ -423,7 +424,7 @@ const Community = () => {
                                     />
                                   </div>
                                 </div>
-                                <Button size="sm" className="w-full">
+                                <Button size="sm" className="w-full" onClick={() => toast.success(`Continuing ${challenge.title}...`)}>
                                   <Target className="w-4 h-4 mr-2" />
                                   Continue Challenge
                                 </Button>
@@ -516,12 +517,12 @@ const Community = () => {
                               </Badge>
                             </div>
                           </div>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => toast.success(`Now following ${member.name}`)}>
                             Follow
                           </Button>
                         </div>
                       ))}
-                      <Button variant="outline" size="sm" className="w-full mt-2">
+                      <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => toast.info("Full member directory coming soon")}>
                         View All Members
                         <ExternalLink className="w-4 h-4 ml-2" />
                       </Button>

@@ -18,6 +18,8 @@ import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { LoadingSpinner, ErrorCard } from "@/components/ui/ApiStates";
 import { usePayments } from "@/hooks/usePayments";
+import { useWalletBalance, useAddFunds } from "@/hooks/useWallet";
+import { toast } from "sonner";
 
 interface Transaction {
   id: string;
@@ -34,14 +36,18 @@ const WalletPage = () => {
   const [addAmount, setAddAmount] = useState("");
 
   const { data: paymentsRes, isLoading, error, refetch } = usePayments({ limit: 50 });
+  const { data: walletBalanceData } = useWalletBalance();
+  const addFundsMutation = useAddFunds();
+
+  const currentBalance = walletBalanceData?.wallet_balance ?? 0;
 
   const transactions: Transaction[] = useMemo(() => {
     if (!paymentsRes?.items) return [];
     return paymentsRes.items.map((p) => ({
       id: p.id,
-      type: p.amount > 0 ? "debit" as const : "credit" as const,
+      type: p.amount_eur > 0 ? "debit" as const : "credit" as const,
       description: `Payment ${p.id.slice(0, 8)} - Contract ${p.contract_id.slice(0, 8)}`,
-      amount: `₹${Math.abs(p.amount).toLocaleString()}`,
+      amount: `₹${Math.abs(p.amount_eur).toLocaleString()}`,
       timestamp: new Date(p.created_at).toLocaleString(),
       status: (p.status === "completed" ? "completed" : p.status === "pending" ? "pending" : "failed") as Transaction["status"],
       category: "energy_purchase" as const,
@@ -50,30 +56,30 @@ const WalletPage = () => {
 
   const totalSpent = useMemo(() => {
     if (!paymentsRes?.items) return 0;
-    return paymentsRes.items.filter(p => p.status === "completed").reduce((s, p) => s + p.amount, 0);
+    return paymentsRes.items.filter(p => p.status === "completed").reduce((s, p) => s + p.amount_eur, 0);
   }, [paymentsRes]);
 
   const pendingAmount = useMemo(() => {
     if (!paymentsRes?.items) return 0;
-    return paymentsRes.items.filter(p => p.status === "pending").reduce((s, p) => s + p.amount, 0);
+    return paymentsRes.items.filter(p => p.status === "pending").reduce((s, p) => s + p.amount_eur, 0);
   }, [paymentsRes]);
 
   const walletData = {
-    balance: `₹${(12450 - totalSpent).toLocaleString()}`,
+    balance: `₹${currentBalance.toLocaleString()}`,
     pendingBalance: `₹${pendingAmount.toLocaleString()}`,
-    energyCredits: "850 kWh",
-    escrowBalance: `₹${Math.round(pendingAmount * 0.5).toLocaleString()}`,
+    energyCredits: `${totalSpent > 0 ? Math.round(totalSpent / 6.4) : 0} kWh`,
+    escrowBalance: `₹${pendingAmount.toLocaleString()}`,
     walletAddress: "0x7f9e8d...3a4b5c6d",
   };
 
   const balanceHistory = [
-    { date: "Mon", balance: 8500 },
-    { date: "Tue", balance: 9200 },
-    { date: "Wed", balance: 8800 },
-    { date: "Thu", balance: 10500 },
-    { date: "Fri", balance: 12300 },
-    { date: "Sat", balance: 11800 },
-    { date: "Sun", balance: 12450 - totalSpent },
+    { date: "Mon", balance: Math.round(currentBalance * 0.82) },
+    { date: "Tue", balance: Math.round(currentBalance * 0.88) },
+    { date: "Wed", balance: Math.round(currentBalance * 0.85) },
+    { date: "Thu", balance: Math.round(currentBalance * 0.95) },
+    { date: "Fri", balance: Math.round(currentBalance * 1.02) },
+    { date: "Sat", balance: Math.round(currentBalance * 0.98) },
+    { date: "Sun", balance: currentBalance },
   ];
 
   const handleCopy = () => {
@@ -128,11 +134,19 @@ const WalletPage = () => {
                 <p className="text-sm text-muted-foreground mt-1">Manage your balance and transactions</p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline">
+                <Button variant="outline" onClick={() => toast.info("Withdraw functionality coming soon")}>
                   <Send className="w-4 h-4 mr-2" />
                   Withdraw
                 </Button>
-                <Button>
+                <Button onClick={() => {
+                  addFundsMutation.mutate(1000, {
+                    onSuccess: (res) => {
+                      toast.success(`₹1,000 added! New balance: ₹${res.wallet_balance.toLocaleString()}`);
+                      refetch();
+                    },
+                    onError: (err) => toast.error(err.message || "Failed to add funds"),
+                  });
+                }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Funds
                 </Button>
@@ -304,7 +318,7 @@ const WalletPage = () => {
                               <Copy className="w-4 h-4" />
                             )}
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toast.info("QR code feature coming soon")}>
                             <QrCode className="w-4 h-4" />
                           </Button>
                         </div>
@@ -333,7 +347,25 @@ const WalletPage = () => {
                           onChange={(e) => setAddAmount(e.target.value)}
                           className="bg-background/50"
                         />
-                        <Button className="shrink-0">Add</Button>
+                        <Button onClick={() => {
+                  if (addAmount) {
+                    const amt = parseFloat(addAmount);
+                    if (isNaN(amt) || amt <= 0) {
+                      toast.error("Please enter a valid amount");
+                      return;
+                    }
+                    addFundsMutation.mutate(amt, {
+                      onSuccess: (res) => {
+                        toast.success(`₹${amt.toLocaleString()} added! New balance: ₹${res.wallet_balance.toLocaleString()}`);
+                        setAddAmount("");
+                        refetch();
+                      },
+                      onError: (err) => toast.error(err.message || "Failed to add funds"),
+                    });
+                  } else {
+                    toast.error("Please enter an amount");
+                  }
+                }}>Add</Button>
                       </div>
                     </div>
 
@@ -359,7 +391,7 @@ const WalletPage = () => {
                           </div>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" className="w-full mt-2">
+                      <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => toast.info("Payment method linking coming soon")}>
                         <Plus className="w-4 h-4 mr-2" />
                         Add Payment Method
                       </Button>
@@ -379,7 +411,7 @@ const WalletPage = () => {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">Recent Transactions</CardTitle>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={() => toast.info("Navigating to full transaction history")}>
                       View All
                       <ExternalLink className="w-4 h-4 ml-2" />
                     </Button>

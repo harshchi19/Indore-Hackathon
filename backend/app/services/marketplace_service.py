@@ -24,7 +24,7 @@ from app.schemas.energy import (
 )
 from app.schemas.contracts import ContractCreateRequest, ContractSignRequest
 from app.schemas.payments import PaymentInitiateRequest
-from app.services import contract_service, payment_service
+from app.services import contract_service, payment_service, wallet_service
 
 logger = get_logger("services.marketplace")
 
@@ -163,6 +163,17 @@ async def buy_energy(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You cannot purchase your own listing",
         )
+
+    # ── 1b. Check buyer wallet balance ─────────────────────
+    total_cost = round(payload.quantity_kwh * listing.price_per_kwh, 2)
+    if buyer.wallet_balance < total_cost:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Insufficient wallet balance. Available: ₹{buyer.wallet_balance:.2f}, Required: ₹{total_cost:.2f}",
+        )
+
+    # ── 1c. Deduct buyer wallet balance ────────────────────
+    await wallet_service.deduct_balance(str(buyer.id), total_cost)
 
     # ── 2. Create contract ─────────────────────────────────
     contract_req = ContractCreateRequest(

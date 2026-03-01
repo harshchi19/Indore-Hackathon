@@ -15,6 +15,7 @@ import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { LoadingSpinner, ErrorCard, EmptyState } from "@/components/ui/ApiStates";
 import { useContracts } from "@/hooks/useContracts";
+import { toast } from "sonner";
 
 interface Contract {
   id: string;
@@ -155,7 +156,7 @@ const Contracts = () => {
                 <h1 className="text-2xl font-heading font-bold text-foreground">Contracts</h1>
                 <p className="text-sm text-muted-foreground mt-1">Manage your P2P energy trading agreements</p>
               </div>
-              <Button>
+              <Button onClick={() => toast.info("Contract creation form coming soon")}>
                 <Plus className="w-4 h-4 mr-2" />
                 New Contract
               </Button>
@@ -208,7 +209,7 @@ const Contracts = () => {
                           className="pl-10 bg-background/50"
                         />
                       </div>
-                      <Button variant="outline">
+                      <Button variant="outline" onClick={() => toast.info("Filter options coming soon")}>
                         <Filter className="w-4 h-4 mr-2" />
                         Filter
                       </Button>
@@ -463,16 +464,16 @@ const Contracts = () => {
                         )}
 
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm" className="flex-1">
+                          <Button variant="outline" size="sm" className="flex-1" onClick={() => toast.info(`Viewing full contract: ${selectedContract?.id}`)}>
                             <Eye className="w-4 h-4 mr-1" />
                             View
                           </Button>
-                          <Button variant="outline" size="sm" className="flex-1">
+                          <Button variant="outline" size="sm" className="flex-1" onClick={() => toast.success(`Downloading ${selectedContract?.id} as PDF...`)}>
                             <Download className="w-4 h-4 mr-1" />
                             PDF
                           </Button>
                           {selectedContract.status === "active" && (
-                            <Button variant="outline" size="sm" className="flex-1">
+                            <Button variant="outline" size="sm" className="flex-1" onClick={() => toast.info(`Editing contract ${selectedContract?.id}...`)}>
                               <Edit2 className="w-4 h-4 mr-1" />
                               Edit
                             </Button>

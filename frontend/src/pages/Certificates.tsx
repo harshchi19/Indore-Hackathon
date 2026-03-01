@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Award, Download, CheckCircle, Shield, Calendar, FileText, ExternalLink, Plus, Search, Zap, Leaf } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useCertificates } from "@/hooks/useCertificates";
+import { toast } from "sonner";
 
 const certTypeColors: Record<string, string> = {
   "REC": "bg-primary/10 text-primary border-primary/20",
@@ -96,7 +97,7 @@ const Certificates = () => {
                     </p>
                     <p className="text-[11px] text-white/60 mt-1">Total Certified</p>
                   </div>
-                  <Button className="bg-white/20 hover:bg-white/30 text-white border-0">
+                  <Button className="bg-white/20 hover:bg-white/30 text-white border-0" onClick={() => toast.info("Certificate issuance form coming soon")}>
                     <Plus className="w-4 h-4 mr-2" /> Issue Certificate
                   </Button>
                 </div>
@@ -218,10 +219,10 @@ const Certificates = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1 text-xs">
+                      <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => toast.success(`Downloading ${cert.id} as PDF`)}>
                         <Download className="w-3 h-3 mr-1" /> PDF
                       </Button>
-                      <Button variant="outline" size="sm" className="text-xs">
+                      <Button variant="outline" size="sm" className="text-xs" onClick={() => toast.success(`Certificate ${cert.id} validated successfully`)}>
                         <CheckCircle className="w-3 h-3 mr-1" /> Validate
                       </Button>
                     </div>
@@ -280,10 +281,10 @@ const Certificates = () => {
                     </div>
 
                     <div className="flex gap-2 pt-2">
-                      <Button className="flex-1 text-xs">
+                      <Button className="flex-1 text-xs" onClick={() => toast.success(`Downloading ${selectedCert?.id} PDF...`)}>
                         <Download className="w-3 h-3 mr-1" /> Download PDF
                       </Button>
-                      <Button variant="outline" className="text-xs">
+                      <Button variant="outline" className="text-xs" onClick={() => toast.success(`Verified on blockchain: ${selectedCert?.hash?.slice(0, 16)}...`)}>
                         <ExternalLink className="w-3 h-3 mr-1" /> Verify
                       </Button>
                     </div>

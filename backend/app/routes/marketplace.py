@@ -50,11 +50,11 @@ async def create_producer(
 )
 async def list_producers(
     status_filter: Optional[ProducerStatus] = Query(default=None, alias="status"),
-    owner_id: Optional[str] = Query(default=None),
+    owner_id: Optional[str] = Query(default=None, description="Filter by owner user ID"),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> ProducerListResponse:
-    return await producer_service.list_producers(status_filter, skip, limit, owner_id=owner_id)
+    return await producer_service.list_producers(status_filter, owner_id, skip, limit)
 
 
 @router.get(

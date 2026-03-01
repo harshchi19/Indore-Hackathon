@@ -6,6 +6,7 @@ export interface UserResponse {
   full_name: string;
   role: UserRole;
   is_active: boolean;
+  wallet_balance: number;
   created_at: string;
   updated_at?: string;
 }

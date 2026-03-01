@@ -154,6 +154,7 @@ async def me(current_user: User = Depends(_get_current_user)) -> UserResponse:
         full_name=current_user.full_name,
         role=current_user.role,
         is_active=current_user.is_active,
+        wallet_balance=current_user.wallet_balance,
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,
     )

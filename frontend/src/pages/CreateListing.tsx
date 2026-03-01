@@ -23,6 +23,7 @@ import type { EnergySource } from "@/types";
 
 const CreateListing = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -56,8 +57,8 @@ const CreateListing = () => {
   ];
 
   const createMutation = useCreateListing();
-  const { user } = useAuth();
-  const { data: producersRes } = useProducers({ owner_id: user?.id, limit: 1 });
+  // Fetch only producer profiles owned by the current user
+  const { data: producersRes } = useProducers({ owner_id: user?.id, limit: 10 });
   const myProducerId = producersRes?.items?.[0]?.id;
 
   const handleSubmit = async () => {

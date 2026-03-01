@@ -157,6 +157,7 @@ from app.routes.payments import router as payments_router
 from app.routes.smart_meter import router as smart_meter_router
 from app.routes.disputes import router as disputes_router
 from app.routes.analytics import router as analytics_router
+from app.routes.wallet import router as wallet_router
 
 app.include_router(contracts_router, prefix=settings.API_V1_PREFIX)
 app.include_router(certificates_router, prefix=settings.API_V1_PREFIX)
@@ -164,6 +165,7 @@ app.include_router(payments_router, prefix=settings.API_V1_PREFIX)
 app.include_router(smart_meter_router, prefix=settings.API_V1_PREFIX)
 app.include_router(disputes_router, prefix=settings.API_V1_PREFIX)
 app.include_router(analytics_router, prefix=settings.API_V1_PREFIX)
+app.include_router(wallet_router, prefix=settings.API_V1_PREFIX)
 
 # ── Routers (AI Services) ────────────────────────────────────
 try:

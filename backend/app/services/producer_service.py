@@ -58,9 +58,9 @@ async def create_producer(
 
 async def list_producers(
     status_filter: Optional[ProducerStatus] = None,
+    owner_id: Optional[str] = None,
     skip: int = 0,
     limit: int = 50,
-    owner_id: Optional[str] = None,
 ) -> ProducerListResponse:
     """Return paginated list of producers, optionally filtered by status or owner."""
     query = {}

@@ -104,6 +104,15 @@ async def handle_webhook(payload: PaymentWebhookPayload) -> PaymentResponse:
         payment.escrow_lock = False
         payment.settled_at = datetime.now(timezone.utc)
 
+        # Credit seller wallet
+        try:
+            from app.services import wallet_service
+            contract = await Contract.get(payment.contract_id)
+            if contract:
+                await wallet_service.credit_balance(str(contract.producer_id), payment.amount_eur)
+        except Exception as exc:
+            logger.warning("Seller credit failed (non-blocking): %s", exc)
+
         # Auto-settle the contract
         contract = await Contract.get(payment.contract_id)
         if contract and contract.status == ContractStatus.ACTIVE:
@@ -169,6 +178,15 @@ async def simulate_settlement_payout(contract_id: str) -> PaymentResponse:
     payment.escrow_lock = False
     payment.settled_at = datetime.now(timezone.utc)
     await payment.save()
+
+    # Credit seller wallet
+    try:
+        from app.services import wallet_service
+        contract = await Contract.get(PydanticObjectId(contract_id))
+        if contract:
+            await wallet_service.credit_balance(str(contract.producer_id), payment.amount_eur)
+    except Exception as exc:
+        logger.warning("Seller credit on settle failed (non-blocking): %s", exc)
 
     logger.info("Settlement payout simulated for contract %s", contract_id)
     return _payment_to_response(payment)

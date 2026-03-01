@@ -59,11 +59,12 @@ export function useBuyEnergy() {
   return useMutation<BuyEnergyResponse, Error, BuyEnergyRequest>({
     mutationFn: (payload) => marketplaceService.buyEnergy(payload),
     onSuccess: () => {
-      // Refresh listings (quantity changed / status → sold) AND contracts / payments
+      // Refresh listings (quantity changed / status → sold) AND contracts / payments / wallet
       qc.invalidateQueries({ queryKey: listingKeys.all });
       qc.invalidateQueries({ queryKey: ["contracts"] });
       qc.invalidateQueries({ queryKey: ["payments"] });
       qc.invalidateQueries({ queryKey: ["analytics"] });
+      qc.invalidateQueries({ queryKey: ["wallet"] });
     },
   });
 }

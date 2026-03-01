@@ -149,7 +149,7 @@ export default function AIAssistant() {
                     AI Energy Assistant
                   </h1>
                   <p className="text-sm text-white/70 max-w-lg">
-                    Ask anything about energy trading, carbon credits, renewables, and the Verdant platform. Get instant expert answers.
+                    Ask anything about energy trading, carbon credits, renewables, and the GreenGrid platform. Get instant expert answers.
                   </p>
                 </div>
                 <div className="flex items-center gap-4">

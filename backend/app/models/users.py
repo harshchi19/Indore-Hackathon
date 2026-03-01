@@ -20,6 +20,7 @@ class User(TimestampedDocument):
     role: UserRole = UserRole.CONSUMER
     is_active: bool = True
     refresh_token: Optional[str] = None
+    wallet_balance: float = Field(default=10000.0, description="Wallet balance in INR")
 
     class Settings:
         name = "users"

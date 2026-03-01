@@ -2,13 +2,16 @@ import { Search, Bell, Wallet, Zap, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { useWalletBalance } from "@/hooks/useWallet";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { VoiceSettingsPanel } from "@/components/VoiceSettingsPanel";
 
 export function TopNavbar() {
   const { user, isAuthenticated } = useAuth();
 
   const { data: dashboard } = useAnalytics();
+  const { data: walletData } = useWalletBalance();
 
   const totalKwh = dashboard?.total_energy_kwh ?? 0;
 
@@ -40,6 +43,9 @@ export function TopNavbar() {
 
       {/* Right section */}
       <div className="flex items-center gap-3">
+        {/* Voice Settings */}
+        <VoiceSettingsPanel />
+
         <button className="w-9 h-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors relative">
           <Bell className="w-4 h-4" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-saffron" />
@@ -47,7 +53,7 @@ export function TopNavbar() {
 
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm">
           <Wallet className="w-3.5 h-3.5 text-primary" />
-          <span className="font-semibold text-foreground text-xs">₹{dashboard ? (dashboard.total_energy_kwh * 6.4).toFixed(0) : "---"}</span>
+          <span className="font-semibold text-foreground text-xs">₹{walletData ? walletData.wallet_balance.toLocaleString() : (user?.wallet_balance?.toLocaleString() ?? "---")}</span>
         </div>
 
         {isAuthenticated && user ? (

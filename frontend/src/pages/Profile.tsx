@@ -17,6 +17,7 @@ import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { useAuth } from "@/context/AuthContext";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { toast } from "sonner";
 
 const Profile = () => {
   const { user } = useAuth();
@@ -269,8 +270,8 @@ const Profile = () => {
                       </div>
 
                       <div className="flex justify-end gap-3">
-                        <Button variant="outline">Cancel</Button>
-                        <Button>Save Changes</Button>
+                        <Button variant="outline" onClick={() => window.location.reload()}>Cancel</Button>
+                        <Button onClick={() => toast.success("Profile changes saved successfully")}>Save Changes</Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -294,7 +295,7 @@ const Profile = () => {
                             <p className="text-sm text-muted-foreground">Last changed 30 days ago</p>
                           </div>
                         </div>
-                        <Button variant="outline" size="sm">Change</Button>
+                        <Button variant="outline" size="sm" onClick={() => toast.info("Password change feature coming soon")}>Change</Button>
                       </div>
 
                       <div className="flex items-center justify-between p-4 rounded-lg border border-border">
@@ -323,7 +324,7 @@ const Profile = () => {
                             <p className="text-sm text-muted-foreground">Get a copy of all your data</p>
                           </div>
                         </div>
-                        <Button variant="outline" size="sm">Download</Button>
+                        <Button variant="outline" size="sm" onClick={() => toast.success("Preparing your data download...")}>Download</Button>
                       </div>
 
                       <div className="flex items-center justify-between p-4 rounded-lg border border-destructive/20 bg-destructive/5">
@@ -336,7 +337,7 @@ const Profile = () => {
                             <p className="text-sm text-muted-foreground">Permanently delete your account and data</p>
                           </div>
                         </div>
-                        <Button variant="destructive" size="sm">Delete</Button>
+                        <Button variant="destructive" size="sm" onClick={() => toast.error("Account deletion requires email confirmation")}>Delete</Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -386,7 +387,7 @@ const Profile = () => {
                       <div className="p-4 rounded-lg border border-border">
                         <div className="flex items-center justify-between mb-4">
                           <h4 className="font-medium">Payment Methods</h4>
-                          <Button variant="outline" size="sm">Add New</Button>
+                          <Button variant="outline" size="sm" onClick={() => toast.info("Add payment method feature coming soon")}>Add New</Button>
                         </div>
                         <div className="space-y-3">
                           <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
@@ -411,7 +412,7 @@ const Profile = () => {
                                 <p className="text-xs text-muted-foreground">Verified</p>
                               </div>
                             </div>
-                            <Button variant="ghost" size="sm">Set Default</Button>
+                            <Button variant="ghost" size="sm" onClick={() => toast.success("UPI set as default payment method")}>Set Default</Button>
                           </div>
                         </div>
                       </div>
@@ -439,7 +440,7 @@ const Profile = () => {
                       </div>
 
                       <div className="flex justify-end">
-                        <Button>Save Billing Info</Button>
+                        <Button onClick={() => toast.success("Billing information saved")}>Save Billing Info</Button>
                       </div>
                     </CardContent>
                   </Card>

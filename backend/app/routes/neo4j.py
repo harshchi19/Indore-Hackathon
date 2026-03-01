@@ -300,3 +300,111 @@ async def sync_single_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
+
+
+# ══════════════════════════════════════════════════════════════
+# CYPHER QUERY (For Graph Explorer)
+# ══════════════════════════════════════════════════════════════
+
+from pydantic import BaseModel
+
+class CypherQueryRequest(BaseModel):
+    query: str
+    params: dict = {}
+
+
+@router.post("/query")
+async def run_cypher_query(
+    request: CypherQueryRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Execute a custom Cypher query and return results.
+    
+    For security, only read queries (starting with MATCH, RETURN, etc.) are allowed.
+    Admin users can run any query.
+    """
+    query = request.query.strip()
+    
+    # Security: Only allow read queries for non-admin users
+    read_keywords = ["MATCH", "RETURN", "OPTIONAL MATCH", "WITH", "UNWIND", "CALL"]
+    write_keywords = ["CREATE", "MERGE", "DELETE", "SET", "REMOVE", "DETACH"]
+    
+    first_word = query.split()[0].upper() if query else ""
+    
+    if current_user.role.value != "admin":
+        if any(kw in query.upper() for kw in write_keywords):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Write operations require admin access"
+            )
+    
+    try:
+        result = await neo4j_service.run_custom_query(
+            query=query,
+            params=request.params,
+        )
+        return {
+            "status": "success",
+            "query": query,
+            "nodes": result.get("nodes", []),
+            "edges": result.get("edges", []),
+            "records": result.get("records", []),
+            "count": result.get("count", 0),
+        }
+    except Exception as e:
+        logger.error("Cypher query failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Query error: {str(e)}"
+        )
+
+
+@router.get("/sample-queries")
+async def get_sample_queries():
+    """Get a list of sample Cypher queries for the Graph Explorer."""
+    return {
+        "queries": [
+            {
+                "name": "All Nodes Overview",
+                "description": "Get all nodes with their labels",
+                "query": "MATCH (n) RETURN n LIMIT 50"
+            },
+            {
+                "name": "Users & Their Purchases",
+                "description": "Show users and what they bought",
+                "query": "MATCH (u:User)-[r:PURCHASED]->(l:Listing) RETURN u, r, l LIMIT 30"
+            },
+            {
+                "name": "Energy Trading Network",
+                "description": "Full trading network visualization",
+                "query": "MATCH (u:User)-[r]->(p:Producer)-[o:OFFERS]->(l:Listing) RETURN u, r, p, o, l LIMIT 50"
+            },
+            {
+                "name": "Producer Rankings",
+                "description": "Top producers by contract count",
+                "query": "MATCH (p:Producer)<-[:PURCHASED]-(u:User) WITH p, count(u) as buyers RETURN p, buyers ORDER BY buyers DESC LIMIT 10"
+            },
+            {
+                "name": "Contract Flow",
+                "description": "Contracts and their connections",
+                "query": "MATCH (c:Contract)-[r]-(n) RETURN c, r, n LIMIT 40"
+            },
+            {
+                "name": "Solar Energy Network",
+                "description": "All solar energy producers and listings",
+                "query": "MATCH (p:Producer {energy_type: 'solar'})-[:OFFERS]->(l:Listing) RETURN p, l"
+            },
+            {
+                "name": "User Graph (Your Trading)",
+                "description": "Current user's complete trading graph",
+                "query": "MATCH (u:User {id: $user_id})-[r]->(n) RETURN u, r, n"
+            },
+            {
+                "name": "Connection Paths",
+                "description": "Find paths between users",
+                "query": "MATCH path = shortestPath((u1:User)-[*..4]-(u2:User)) WHERE u1.id <> u2.id RETURN path LIMIT 10"
+            },
+        ]
+    }
+
