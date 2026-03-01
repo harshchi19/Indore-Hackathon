@@ -26,27 +26,42 @@ logger = get_logger("main")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage async resources across the app lifetime."""
+    pricing_task = certificate_task = meter_task = analytics_task = None
     # ── startup ──
     logger.info("Starting %s v%s [%s]", settings.APP_NAME, settings.APP_VERSION, settings.ENVIRONMENT)
-    await connect_db()
+    logger.info("MONGODB_URI prefix: %s", settings.MONGODB_URI[:30])
+    try:
+        await connect_db()
+    except Exception as exc:
+        logger.critical(
+            "FATAL: MongoDB startup failed – %s. "
+            "Check MONGODB_URI env var and Atlas IP whitelist (add 0.0.0.0/0).",
+            exc,
+        )
+        raise  # re-raise so Render shows the real error
 
     # Start background workers
-    from app.workers.pricing_worker import start_pricing_worker
-    from app.workers.certificate_worker import start_certificate_worker
-    from app.workers.smart_meter_worker import start_smart_meter_worker
-    from app.workers.analytics_worker import start_analytics_worker
+    try:
+        from app.workers.pricing_worker import start_pricing_worker
+        from app.workers.certificate_worker import start_certificate_worker
+        from app.workers.smart_meter_worker import start_smart_meter_worker
+        from app.workers.analytics_worker import start_analytics_worker
 
-    pricing_task = start_pricing_worker()
-    certificate_task = start_certificate_worker()
-    meter_task = start_smart_meter_worker()
-    analytics_task = start_analytics_worker()
-    logger.info("All background workers launched")
+        pricing_task = start_pricing_worker()
+        certificate_task = start_certificate_worker()
+        meter_task = start_smart_meter_worker()
+        analytics_task = start_analytics_worker()
+        logger.info("All background workers launched")
+    except Exception as exc:
+        logger.error("Background workers failed to start: %s", exc)
+        # Non-fatal – app continues without workers
 
     yield
 
     # ── shutdown ──
     for task in (pricing_task, certificate_task, meter_task, analytics_task):
-        task.cancel()
+        if task is not None:
+            task.cancel()
     await close_db()
     logger.info("Application shut down gracefully")
 

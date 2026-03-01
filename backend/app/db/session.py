@@ -39,7 +39,12 @@ async def connect_db() -> AsyncIOMotorDatabase:
     from app.models.disputes import Dispute
     from app.models.smart_meter import SmartMeterReading
 
-    _client = AsyncIOMotorClient(settings.MONGODB_URI)
+    _client = AsyncIOMotorClient(
+        settings.MONGODB_URI,
+        serverSelectionTimeoutMS=10_000,  # fail fast (10s) instead of 30s default
+        connectTimeoutMS=10_000,
+        socketTimeoutMS=10_000,
+    )
     _db = _client[settings.MONGODB_DB_NAME]
 
     await init_beanie(
