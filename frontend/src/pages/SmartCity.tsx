@@ -12,7 +12,7 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 
 /* TODO: Replace with API data when city/zone endpoints are available */
 
-const cities = ["Delhi", "Mumbai", "Bangalore", "Chennai", "Pune"];
+const cities = ["Delhi", "Mumbai", "Bangalore", "Chennai", "Indore"];
 
 const energyMix = [
   { name: "Solar", value: 42, color: "hsl(30 100% 60%)" },

@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 const investments = [
   { id: 1, name: "Solar Farm — Rajasthan", type: "Solar", icon: Sun, funding: 500000, roi: 14.2, carbonImpact: 8400, credits: 120, risk: "Low" },
   { id: 2, name: "Wind Turbine — Tamil Nadu", type: "Wind", icon: Wind, funding: 750000, roi: 11.8, carbonImpact: 6200, credits: 90, risk: "Medium" },
-  { id: 3, name: "Community Microgrid — Pune", type: "Grid", icon: Zap, funding: 300000, roi: 18.5, carbonImpact: 4800, credits: 70, risk: "Low" },
+  { id: 3, name: "Community Microgrid — Indore", type: "Grid", icon: Zap, funding: 300000, roi: 18.5, carbonImpact: 4800, credits: 70, risk: "Low" },
 ];
 
 const growthData = [

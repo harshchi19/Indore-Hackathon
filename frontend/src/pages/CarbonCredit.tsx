@@ -27,7 +27,7 @@ const leaderboard = {
   ],
   producers: [
     { name: "SolarFarm Alpha", score: 12400, badge: "⚡" },
-    { name: "WindTech Pune", score: 9800, badge: "⚡" },
+    { name: "WindTech Indore", score: 9800, badge: "⚡" },
     { name: "HydroFlow Kerala", score: 8200, badge: "💧" },
     { name: "GreenWind TN", score: 6100, badge: "🌬️" },
     { name: "MicroSolar Goa", score: 4800, badge: "☀️" },

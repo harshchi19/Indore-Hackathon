@@ -24,7 +24,7 @@ import {
 /* ── Static sample producers for recommendations ─────── */
 const SAMPLE_PRODUCERS = [
   { id: "prod-01", name: "SolarEdge Gujarat", energy_type: "solar", price_kwh: 4.5, co2_kg_per_kwh: 0.04, reliability_pct: 98 },
-  { id: "prod-02", name: "WindTech Pune", energy_type: "wind", price_kwh: 5.8, co2_kg_per_kwh: 0.02, reliability_pct: 93 },
+  { id: "prod-02", name: "WindTech Indore", energy_type: "wind", price_kwh: 5.8, co2_kg_per_kwh: 0.02, reliability_pct: 93 },
   { id: "prod-03", name: "HydroFlow Kerala", energy_type: "hydro", price_kwh: 4.2, co2_kg_per_kwh: 0.01, reliability_pct: 99 },
   { id: "prod-04", name: "BioEnergy Maharashtra", energy_type: "biomass", price_kwh: 6.1, co2_kg_per_kwh: 0.12, reliability_pct: 87 },
 ];

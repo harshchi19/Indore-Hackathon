@@ -42,53 +42,53 @@ const insightColors: Record<string, string> = {
 
 const sources = [
   { name: "SolarFarm Alpha", type: "Solar", icon: Sun, price: 5.2, carbon: 140, reliability: 98, distance: 2.1, score: 0 },
-  { name: "WindTech Pune", type: "Wind", icon: Wind, price: 6.0, carbon: 95, reliability: 94, distance: 5.4, score: 0 },
+  { name: "WindTech Indore", type: "Wind", icon: Wind, price: 6.0, carbon: 95, reliability: 94, distance: 5.4, score: 0 },
   { name: "HydroFlow Kerala", type: "Hydro", icon: Droplets, price: 4.8, carbon: 155, reliability: 99, distance: 12.0, score: 0 },
 ];
 
 /* ── Map data ────────────────────────────────────── */
-const PUNE_CENTER: L.LatLngExpression = [18.5204, 73.8567];
+const INDORE_CENTER: L.LatLngExpression = [22.7196, 75.8577];
 
 const zonePolygons = [
-  { label: "Koregaon Park — Residential", color: "#3b82f6", coords: [[18.536,73.893],[18.542,73.902],[18.530,73.910],[18.524,73.900]] as L.LatLngExpression[] },
-  { label: "Kothrud — Residential", color: "#3b82f6", coords: [[18.505,73.808],[18.515,73.815],[18.508,73.825],[18.498,73.818]] as L.LatLngExpression[] },
-  { label: "Hinjewadi IT Park — Commercial", color: "#8b5cf6", coords: [[18.590,73.715],[18.600,73.725],[18.592,73.740],[18.582,73.730]] as L.LatLngExpression[] },
-  { label: "Pimpri-Chinchwad — Industrial", color: "#6b7280", coords: [[18.620,73.790],[18.635,73.800],[18.628,73.818],[18.613,73.808]] as L.LatLngExpression[] },
-  { label: "Hadapsar — Commercial", color: "#8b5cf6", coords: [[18.500,73.930],[18.510,73.945],[18.498,73.955],[18.488,73.940]] as L.LatLngExpression[] },
-  { label: "Wagholi — Demand Hotspot", color: "#f59e0b", coords: [[18.580,73.975],[18.590,73.990],[18.578,73.998],[18.568,73.983]] as L.LatLngExpression[] },
+  { label: "Vijay Nagar — Residential", color: "#3b82f6", coords: [[22.748,75.886],[22.754,75.895],[22.742,75.902],[22.736,75.893]] as L.LatLngExpression[] },
+  { label: "Bhawarkua — Residential", color: "#3b82f6", coords: [[22.698,75.848],[22.708,75.855],[22.701,75.865],[22.691,75.858]] as L.LatLngExpression[] },
+  { label: "Super Corridor — IT Park", color: "#8b5cf6", coords: [[22.782,75.898],[22.792,75.908],[22.784,75.922],[22.774,75.912]] as L.LatLngExpression[] },
+  { label: "Pithampur — Industrial", color: "#6b7280", coords: [[22.618,75.688],[22.632,75.698],[22.625,75.715],[22.611,75.705]] as L.LatLngExpression[] },
+  { label: "Palasia — Commercial", color: "#8b5cf6", coords: [[22.732,75.868],[22.742,75.878],[22.730,75.888],[22.720,75.878]] as L.LatLngExpression[] },
+  { label: "Bicholi Mardana — Demand Hotspot", color: "#f59e0b", coords: [[22.778,75.928],[22.788,75.942],[22.776,75.950],[22.766,75.936]] as L.LatLngExpression[] },
 ];
 
 const existingRenewables = [
-  { label: "Existing Solar Farm", pos: [18.460, 73.750] as L.LatLngExpression, emoji: "☀️", color: "#f97316" },
-  { label: "Existing Wind Farm", pos: [18.650, 73.850] as L.LatLngExpression, emoji: "🌀", color: "#3b82f6" },
+  { label: "Existing Solar Farm", pos: [22.648, 75.798] as L.LatLngExpression, emoji: "☀️", color: "#f97316" },
+  { label: "Existing Wind Farm", pos: [22.855, 75.902] as L.LatLngExpression, emoji: "🌀", color: "#3b82f6" },
 ];
 
 const aiPinData = [
-  { id: "ai-s1", label: "AI: Solar Hub — Baner", pos: [18.560, 73.780] as L.LatLngExpression, emoji: "☀️", color: "#f97316" },
-  { id: "ai-s2", label: "AI: Solar Hub — Viman Nagar", pos: [18.567, 73.915] as L.LatLngExpression, emoji: "☀️", color: "#f97316" },
-  { id: "ai-s3", label: "AI: Solar Hub — Undri", pos: [18.465, 73.895] as L.LatLngExpression, emoji: "☀️", color: "#f97316" },
-  { id: "ai-w1", label: "AI: Wind Turbine — Lavasa Rd", pos: [18.410, 73.510] as L.LatLngExpression, emoji: "🌀", color: "#3b82f6" },
-  { id: "ai-w2", label: "AI: Wind Turbine — Talegaon", pos: [18.730, 73.680] as L.LatLngExpression, emoji: "🌀", color: "#3b82f6" },
-  { id: "ai-b1", label: "AI: Battery — Shivajinagar", pos: [18.530, 73.845] as L.LatLngExpression, emoji: "🔋", color: "#22c55e" },
-  { id: "ai-b2", label: "AI: Battery — Kharadi", pos: [18.550, 73.940] as L.LatLngExpression, emoji: "🔋", color: "#22c55e" },
+  { id: "ai-s1", label: "AI: Solar Hub — Vijay Nagar", pos: [22.745, 75.890] as L.LatLngExpression, emoji: "☀️", color: "#f97316" },
+  { id: "ai-s2", label: "AI: Solar Hub — Rajendra Nagar", pos: [22.692, 75.872] as L.LatLngExpression, emoji: "☀️", color: "#f97316" },
+  { id: "ai-s3", label: "AI: Solar Hub — AB Road", pos: [22.728, 75.892] as L.LatLngExpression, emoji: "☀️", color: "#f97316" },
+  { id: "ai-w1", label: "AI: Wind Turbine — Sanwer", pos: [22.972, 75.832] as L.LatLngExpression, emoji: "🌀", color: "#3b82f6" },
+  { id: "ai-w2", label: "AI: Wind Turbine — Mhow", pos: [22.558, 75.762] as L.LatLngExpression, emoji: "🌀", color: "#3b82f6" },
+  { id: "ai-b1", label: "AI: Battery — Palasia", pos: [22.732, 75.868] as L.LatLngExpression, emoji: "🔋", color: "#22c55e" },
+  { id: "ai-b2", label: "AI: Battery — Scheme 54", pos: [22.758, 75.890] as L.LatLngExpression, emoji: "🔋", color: "#22c55e" },
 ];
 
 const futurePinData = [
-  { id: "f-s1", label: "2030: Solar — Wakad", pos: [18.598, 73.762] as L.LatLngExpression, emoji: "☀️", color: "#f97316" },
-  { id: "f-s2", label: "2030: Solar — Kondhwa", pos: [18.470, 73.875] as L.LatLngExpression, emoji: "☀️", color: "#f97316" },
-  { id: "f-w1", label: "2030: Wind — Mulshi", pos: [18.500, 73.550] as L.LatLngExpression, emoji: "🌀", color: "#3b82f6" },
-  { id: "f-b1", label: "2035: Battery — Camp", pos: [18.515, 73.880] as L.LatLngExpression, emoji: "🔋", color: "#22c55e" },
-  { id: "f-s3", label: "2035: Solar — Sinhagad Rd", pos: [18.475, 73.810] as L.LatLngExpression, emoji: "☀️", color: "#f97316" },
-  { id: "f-w2", label: "2035: Wind — Chakan", pos: [18.760, 73.860] as L.LatLngExpression, emoji: "🌀", color: "#3b82f6" },
+  { id: "f-s1", label: "2030: Solar — LIG Colony", pos: [22.752, 75.864] as L.LatLngExpression, emoji: "☀️", color: "#f97316" },
+  { id: "f-s2", label: "2030: Solar — Sudama Nagar", pos: [22.702, 75.882] as L.LatLngExpression, emoji: "☀️", color: "#f97316" },
+  { id: "f-w1", label: "2030: Wind — Depalpur", pos: [22.848, 75.558] as L.LatLngExpression, emoji: "🌀", color: "#3b82f6" },
+  { id: "f-b1", label: "2035: Battery — Sanyogitaganj", pos: [22.722, 75.856] as L.LatLngExpression, emoji: "🔋", color: "#22c55e" },
+  { id: "f-s3", label: "2035: Solar — Rau", pos: [22.676, 75.802] as L.LatLngExpression, emoji: "☀️", color: "#f97316" },
+  { id: "f-w2", label: "2035: Wind — Hatod", pos: [22.852, 75.748] as L.LatLngExpression, emoji: "🌀", color: "#3b82f6" },
 ];
 
 const energyFlows: { from: L.LatLngExpression; to: L.LatLngExpression; color: string }[] = [
-  { from: [18.460,73.750], to: [18.505,73.808], color: "#f97316" },
-  { from: [18.460,73.750], to: [18.530,73.845], color: "#22c55e" },
-  { from: [18.650,73.850], to: [18.620,73.790], color: "#3b82f6" },
-  { from: [18.650,73.850], to: [18.590,73.715], color: "#3b82f6" },
-  { from: [18.530,73.845], to: [18.536,73.893], color: "#22c55e" },
-  { from: [18.530,73.845], to: [18.500,73.930], color: "#22c55e" },
+  { from: [22.648,75.798], to: [22.698,75.848], color: "#f97316" },
+  { from: [22.648,75.798], to: [22.732,75.868], color: "#22c55e" },
+  { from: [22.855,75.902], to: [22.618,75.688], color: "#3b82f6" },
+  { from: [22.855,75.902], to: [22.782,75.898], color: "#3b82f6" },
+  { from: [22.732,75.868], to: [22.748,75.886], color: "#22c55e" },
+  { from: [22.732,75.868], to: [22.732,75.868], color: "#22c55e" },
 ];
 
 const makeIcon = (emoji: string, color: string, pulsing = false) =>
@@ -111,7 +111,7 @@ const CityMap = ({ aiOptimized, deployedPins, futureMode }: { aiOptimized: boole
     if (!containerRef.current || mapRef.current) return;
 
     const map = L.map(containerRef.current, {
-      center: PUNE_CENTER,
+      center: INDORE_CENTER,
       zoom: 11,
       zoomControl: false,
       attributionControl: false,
@@ -300,7 +300,7 @@ const AIBrain = () => {
     });
     scored.sort((a, b) => b.score - a.score);
     return scored;
-  }, [budget, carbon, reliability, locality, liveAvgPrice]);
+  }, [budget, carbon, reliability, locality]);
 
   const best = recommendation[0];
 
@@ -356,7 +356,7 @@ const AIBrain = () => {
                     AI Energy Intelligence + City Planner
                   </h1>
                   <p className="text-sm text-white/70 max-w-lg">
-                    Real-world map intelligence — watch AI optimize infrastructure placement across Pune.
+                    Real-world map intelligence — watch AI optimize infrastructure placement across Indore.
                   </p>
                 </div>
                 <div className="text-center">
@@ -491,7 +491,7 @@ const AIBrain = () => {
                 <div className="flex items-center justify-between px-5 pt-4 pb-2 relative z-[500]">
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-primary" />
-                    <h3 className="font-heading font-semibold text-foreground text-sm">Smart City Map — Pune</h3>
+                    <h3 className="font-heading font-semibold text-foreground text-sm">Smart City Map — Indore</h3>
                   </div>
                   <div className="flex items-center gap-2">
                     {(["present", "2030", "2035"] as const).map(v => (
