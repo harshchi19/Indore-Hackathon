@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -15,11 +15,17 @@ import {
 } from "lucide-react";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { PageTransition } from "@/components/ui/PageTransition";
+import { useAuth } from "@/context/AuthContext";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 const Profile = () => {
+  const { user } = useAuth();
+
+  const { data: dashboard } = useAnalytics();
+
   const [profile, setProfile] = useState({
-    name: "Rahul Sharma",
-    email: "rahul.sharma@example.com",
+    name: "",
+    email: "",
     phone: "+91 98765 43210",
     location: "Mumbai, Maharashtra",
     company: "GreenTech Solutions",
@@ -27,9 +33,31 @@ const Profile = () => {
     userType: "prosumer",
     kycStatus: "verified",
     joinedDate: "Jan 2024",
-    tradingVolume: "12,450 kWh",
-    carbonOffset: "8.2 tons CO₂",
+    tradingVolume: "0 kWh",
+    carbonOffset: "0 tons CO₂",
   });
+
+  // Populate profile from auth user + dashboard
+  useEffect(() => {
+    if (user) {
+      setProfile((prev) => ({
+        ...prev,
+        name: user.full_name || prev.name,
+        email: user.email || prev.email,
+        userType: user.role || prev.userType,
+      }));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (dashboard) {
+      setProfile((prev) => ({
+        ...prev,
+        tradingVolume: `${dashboard.total_energy_kwh.toLocaleString()} kWh`,
+        carbonOffset: `${(dashboard.total_co2_avoided_kg / 1000).toFixed(1)} tons CO₂`,
+      }));
+    }
+  }, [dashboard]);
 
   const [notifications, setNotifications] = useState({
     emailAlerts: true,
@@ -76,7 +104,7 @@ const Profile = () => {
                       <Avatar className="w-24 h-24 border-4 border-primary/20">
                         <AvatarImage src="/placeholder-avatar.jpg" />
                         <AvatarFallback className="bg-primary/10 text-primary text-2xl font-heading">
-                          RS
+                          {profile.name ? profile.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "U"}
                         </AvatarFallback>
                       </Avatar>
                       <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-lg">

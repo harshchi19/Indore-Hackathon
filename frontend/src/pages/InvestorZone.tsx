@@ -1,3 +1,6 @@
+// TODO: Backend integration pending — No /api/v1/investments endpoint exists yet.
+// This page uses hardcoded investment projects and growth data.
+// When an investments API is created, replace with service calls.
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
@@ -8,6 +11,7 @@ import { useState, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
 
+/* TODO: Replace with API data when backend investments endpoint is available */
 const investments = [
   { id: 1, name: "Solar Farm — Rajasthan", type: "Solar", icon: Sun, funding: 500000, roi: 14.2, carbonImpact: 8400, credits: 120, risk: "Low" },
   { id: 2, name: "Wind Turbine — Tamil Nadu", type: "Wind", icon: Wind, funding: 750000, roi: 11.8, carbonImpact: 6200, credits: 90, risk: "Medium" },

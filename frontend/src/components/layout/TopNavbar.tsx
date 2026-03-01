@@ -1,11 +1,17 @@
-import { Search, Bell, Wallet, Zap } from "lucide-react";
+import { Search, Bell, Wallet, Zap, User } from "lucide-react";
 import { motion } from "framer-motion";
-import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/context/AuthContext";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export function TopNavbar() {
-  const { user } = useUser();
-  
+  const { user, isAuthenticated } = useAuth();
+
+  const { data: dashboard } = useAnalytics();
+
+  const totalKwh = dashboard?.total_energy_kwh ?? 0;
+
   return (
     <motion.header
       initial={{ y: -10, opacity: 0 }}
@@ -27,7 +33,9 @@ export function TopNavbar() {
       <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/8 border border-primary/15 text-sm">
         <Zap className="w-3.5 h-3.5 text-primary animate-pulse-glow" />
         <span className="text-muted-foreground text-xs">Renewable flowing:</span>
-        <span className="font-semibold text-primary text-xs font-heading">12,430 kWh</span>
+        <span className="font-semibold text-primary text-xs font-heading">
+          {totalKwh.toLocaleString()} kWh
+        </span>
       </div>
 
       {/* Right section */}
@@ -39,30 +47,30 @@ export function TopNavbar() {
 
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm">
           <Wallet className="w-3.5 h-3.5 text-primary" />
-          <span className="font-semibold text-foreground text-xs">₹2,840</span>
+          <span className="font-semibold text-foreground text-xs">₹{dashboard ? (dashboard.total_energy_kwh * 6.4).toFixed(0) : "---"}</span>
         </div>
 
-        <SignedIn>
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 text-sm">
-            <span className="text-muted-foreground text-xs">Welcome,</span>
-            <span className="font-medium text-foreground text-xs">{user?.firstName || user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] || "User"}</span>
-          </div>
-          <UserButton 
-            afterSignOutUrl="/"
-            appearance={{
-              elements: {
-                avatarBox: "w-8 h-8"
-              }
-            }}
-          />
-        </SignedIn>
-        <SignedOut>
-          <SignInButton mode="modal">
+        {isAuthenticated && user ? (
+          <>
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 text-sm">
+              <span className="text-muted-foreground text-xs">Welcome,</span>
+              <span className="font-medium text-foreground text-xs">
+                {user.full_name?.split(" ")[0] || user.email?.split("@")[0] || "User"}
+              </span>
+            </div>
+            <Link to="/profile" className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center ring-2 ring-primary/20">
+              <span className="text-primary-foreground text-xs font-bold">
+                {user.full_name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || "U"}
+              </span>
+            </Link>
+          </>
+        ) : (
+          <Link to="/login">
             <Button variant="default" size="sm">
               Sign In
             </Button>
-          </SignInButton>
-        </SignedOut>
+          </Link>
+        )}
       </div>
     </motion.header>
   );

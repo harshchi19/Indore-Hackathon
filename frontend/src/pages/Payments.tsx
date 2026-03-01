@@ -2,31 +2,47 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
+import { LoadingSpinner, ErrorCard } from "@/components/ui/ApiStates";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { CreditCard, Download, FileText, CheckCircle, Clock, AlertCircle, IndianRupee, Calendar, Settings, ArrowUpRight, LucideIcon } from "lucide-react";
-import { useState } from "react";
-
-const invoices = [
-  { id: "INV-2026-001", date: "2026-02-25", amount: 4250, status: "paid", description: "Energy Purchase - SolarFarm Alpha" },
-  { id: "INV-2026-002", date: "2026-02-20", amount: 2180, status: "paid", description: "Energy Purchase - WindTech Pune" },
-  { id: "INV-2026-003", date: "2026-02-15", amount: 3820, status: "pending", description: "Energy Purchase - HydroFlow Kerala" },
-  { id: "INV-2026-004", date: "2026-02-10", amount: 1560, status: "paid", description: "Energy Purchase - SolarMax Delhi" },
-  { id: "INV-2026-005", date: "2026-02-05", amount: 5200, status: "overdue", description: "Energy Purchase - GreenWind TN" },
-  { id: "INV-2026-006", date: "2026-01-28", amount: 2890, status: "paid", description: "Energy Purchase - MicroSolar Goa" },
-];
+import { useState, useMemo } from "react";
+import { usePayments } from "@/hooks/usePayments";
 
 const statusColors: Record<string, { bg: string; text: string; icon: LucideIcon }> = {
   paid: { bg: "bg-primary/10", text: "text-primary", icon: CheckCircle },
+  completed: { bg: "bg-primary/10", text: "text-primary", icon: CheckCircle },
   pending: { bg: "bg-saffron/10", text: "text-saffron", icon: Clock },
   overdue: { bg: "bg-destructive/10", text: "text-destructive", icon: AlertCircle },
+  failed: { bg: "bg-destructive/10", text: "text-destructive", icon: AlertCircle },
 };
 
 const Payments = () => {
-  const [selectedInvoice, setSelectedInvoice] = useState<typeof invoices[0] | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
+
+  const { data: paymentsRes, isLoading, error, refetch } = usePayments({ limit: 100 });
+
+  const invoices = useMemo(() => {
+    if (!paymentsRes?.items) return [];
+    return paymentsRes.items.map((p) => ({
+      id: p.id,
+      date: new Date(p.created_at).toISOString().split("T")[0],
+      amount: p.amount_eur,
+      status: p.status === "completed" ? "paid" : p.status,
+      description: `Energy Payment - Contract ${p.contract_id?.slice(-6) || "N/A"}`,
+    }));
+  }, [paymentsRes]);
 
   const totalSpent = invoices.filter(i => i.status === "paid").reduce((sum, i) => sum + i.amount, 0);
   const outstanding = invoices.filter(i => i.status !== "paid").reduce((sum, i) => sum + i.amount, 0);
+
+  if (isLoading) {
+    return <AppLayout><PageTransition><LoadingSpinner message="Loading payments..." /></PageTransition></AppLayout>;
+  }
+
+  if (error && !paymentsRes) {
+    return <AppLayout><PageTransition><ErrorCard message="Failed to load payments" onRetry={() => refetch()} /></PageTransition></AppLayout>;
+  }
 
   return (
     <AppLayout>

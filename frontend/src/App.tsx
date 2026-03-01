@@ -1,8 +1,11 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/context/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { createQueryClientConfig } from "@/utils/apiErrorHandler";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Marketplace from "./pages/Marketplace";
@@ -36,50 +39,63 @@ import ProducerDetail from "./pages/ProducerDetail";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = createQueryClientConfig();
+
+/* ── Helper to wrap pages in auth guard ──────────────── */
+const P = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>{children}</ProtectedRoute>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <AuthProvider>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/producers" element={<Producers />} />
-          <Route path="/buy-energy" element={<BuyEnergy />} />
-          <Route path="/producer" element={<ProducerDashboard />} />
-          <Route path="/smart-meter" element={<SmartMeter />} />
-          <Route path="/certificates" element={<Certificates />} />
-          <Route path="/carbon" element={<CarbonCredit />} />
-          <Route path="/pricing" element={<PricingAuctions />} />
-          <Route path="/payments" element={<Payments />} />
-          <Route path="/kyc" element={<KYC />} />
-          <Route path="/disputes" element={<Disputes />} />
-          <Route path="/admin" element={<AdminConsole />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/contracts" element={<Contracts />} />
-          <Route path="/history" element={<TradingHistory />} />
-          <Route path="/wallet" element={<WalletPage />} />
-          <Route path="/community" element={<Community />} />
-          <Route path="/create-listing" element={<CreateListing />} />
-          <Route path="/order/:orderId" element={<OrderDetails />} />
-          <Route path="/producer/:producerId" element={<ProducerDetail />} />
           <Route path="/help" element={<Help />} />
-          <Route path="/ai-brain" element={<AIBrain />} />
-          <Route path="/smart-city" element={<SmartCity />} />
-          <Route path="/future" element={<FutureSimulator />} />
-          <Route path="/investor" element={<InvestorZone />} />
-          <Route path="/eip" element={<EIPSimulator />} />
+
+          {/* Protected routes */}
+          <Route path="/dashboard" element={<P><Dashboard /></P>} />
+          <Route path="/marketplace" element={<P><Marketplace /></P>} />
+          <Route path="/producers" element={<P><Producers /></P>} />
+          <Route path="/buy-energy" element={<P><BuyEnergy /></P>} />
+          <Route path="/producer" element={<P><ProducerDashboard /></P>} />
+          <Route path="/smart-meter" element={<P><SmartMeter /></P>} />
+          <Route path="/certificates" element={<P><Certificates /></P>} />
+          <Route path="/carbon" element={<P><CarbonCredit /></P>} />
+          <Route path="/pricing" element={<P><PricingAuctions /></P>} />
+          <Route path="/payments" element={<P><Payments /></P>} />
+          <Route path="/kyc" element={<P><KYC /></P>} />
+          <Route path="/disputes" element={<P><Disputes /></P>} />
+          <Route path="/notifications" element={<P><Notifications /></P>} />
+          <Route path="/profile" element={<P><Profile /></P>} />
+          <Route path="/contracts" element={<P><Contracts /></P>} />
+          <Route path="/history" element={<P><TradingHistory /></P>} />
+          <Route path="/wallet" element={<P><WalletPage /></P>} />
+          <Route path="/community" element={<P><Community /></P>} />
+          <Route path="/create-listing" element={<P><CreateListing /></P>} />
+          <Route path="/order/:orderId" element={<P><OrderDetails /></P>} />
+          <Route path="/producer/:producerId" element={<P><ProducerDetail /></P>} />
+          <Route path="/ai-brain" element={<P><AIBrain /></P>} />
+          <Route path="/smart-city" element={<P><SmartCity /></P>} />
+          <Route path="/future" element={<P><FutureSimulator /></P>} />
+          <Route path="/investor" element={<P><InvestorZone /></P>} />
+          <Route path="/eip" element={<P><EIPSimulator /></P>} />
+
+          {/* Admin routes */}
+          <Route path="/admin" element={<ProtectedRoute roles={["admin"]}><AdminConsole /></ProtectedRoute>} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

@@ -16,6 +16,8 @@ import {
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { useNavigate } from "react-router-dom";
+import { useCreateListing } from "@/hooks/useListings";
+import type { EnergySource } from "@/types";
 
 const CreateListing = () => {
   const navigate = useNavigate();
@@ -51,13 +53,27 @@ const CreateListing = () => {
     { id: "green", name: "Green-e", desc: "Green-e Energy Certified" },
   ];
 
+  const createMutation = useCreateListing();
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await createMutation.mutateAsync({
+        producer_id: "default", // will be set by backend from auth
+        title: `${formData.energyType.charAt(0).toUpperCase() + formData.energyType.slice(1)} Energy - ${formData.capacity} kWh`,
+        description: formData.description || undefined,
+        energy_source: formData.energyType as EnergySource,
+        quantity_kwh: formData.capacity,
+        price_per_kwh: formData.pricePerUnit,
+        min_purchase_kwh: formData.minOrder,
+        available_until: formData.endDate || undefined,
+      });
+      navigate("/marketplace");
+    } catch {
+      // error handled by mutation
+    } finally {
       setIsSubmitting(false);
-      navigate("/producer");
-    }, 2000);
+    }
   };
 
   const estimatedRevenue = formData.capacity * formData.pricePerUnit * 30;

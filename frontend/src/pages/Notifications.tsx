@@ -1,3 +1,6 @@
+// TODO: Backend integration pending — No /api/v1/notifications endpoint exists yet.
+// This page currently uses local state with hardcoded notification data.
+// When a notifications API is created, replace the static array below with a useNotifications() hook.
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
@@ -7,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Bell, CheckCircle, FileText, CreditCard, Award, Gavel, Plug, Zap, Settings, Check, Trash2, Filter } from "lucide-react";
 import { useState } from "react";
 
+/* TODO: Replace with API data when backend notifications endpoint is available */
 const notifications = [
   { id: 1, type: "contract", title: "New Contract Created", message: "Energy purchase contract CON-2026-055 has been created with SolarFarm Alpha.", time: "2 min ago", read: false, icon: FileText },
   { id: 2, type: "payment", title: "Payment Received", message: "₹4,250 has been credited to your account from HydroFlow Kerala.", time: "15 min ago", read: false, icon: CreditCard },

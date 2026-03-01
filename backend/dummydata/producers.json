@@ -1,0 +1,152 @@
+[
+  {
+    "_id": "69a34e3cc39812dd880eb6d5",
+    "owner_id": "69a34e3cc39812dd880eb6b7",
+    "company_name": "SolarFarm Alpha",
+    "description": "Largest solar installation in western Maharashtra with 50MW capacity.",
+    "energy_sources": [
+      "solar"
+    ],
+    "capacity_kw": 50000,
+    "location": "Pune, Maharashtra",
+    "status": "verified",
+    "verified_by": "69a34e3cc39812dd880eb6b5",
+    "created_at": "2025-10-28T20:21:16.241767+00:00",
+    "updated_at": "2026-02-25T20:21:16.241772+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb6d6",
+    "owner_id": "69a34e3cc39812dd880eb6b8",
+    "company_name": "WindTech Pune",
+    "description": "Offshore wind farm providing consistent energy to Pune metro.",
+    "energy_sources": [
+      "wind"
+    ],
+    "capacity_kw": 32000,
+    "location": "Pune, Maharashtra",
+    "status": "verified",
+    "verified_by": "69a34e3cc39812dd880eb6b5",
+    "created_at": "2025-10-11T20:21:16.241778+00:00",
+    "updated_at": "2026-02-27T20:21:16.241783+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb6d7",
+    "owner_id": "69a34e3cc39812dd880eb6b9",
+    "company_name": "HydroFlow Kerala",
+    "description": "Run-of-river hydro project in Idukki district, Kerala.",
+    "energy_sources": [
+      "hydro"
+    ],
+    "capacity_kw": 25000,
+    "location": "Idukki, Kerala",
+    "status": "verified",
+    "verified_by": "69a34e3cc39812dd880eb6b5",
+    "created_at": "2026-01-04T20:21:16.241790+00:00",
+    "updated_at": "2026-02-18T20:21:16.241794+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb6d8",
+    "owner_id": "69a34e3cc39812dd880eb6ba",
+    "company_name": "GreenWind Tamil Nadu",
+    "description": "Onshore wind farm in Tirunelveli with 120 turbines.",
+    "energy_sources": [
+      "wind"
+    ],
+    "capacity_kw": 48000,
+    "location": "Tirunelveli, Tamil Nadu",
+    "status": "verified",
+    "verified_by": "69a34e3cc39812dd880eb6b5",
+    "created_at": "2025-12-11T20:21:16.241799+00:00",
+    "updated_at": "2026-02-24T20:21:16.241803+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb6d9",
+    "owner_id": "69a34e3cc39812dd880eb6bb",
+    "company_name": "MicroSolar Goa",
+    "description": "Distributed rooftop solar across 500 homes in South Goa.",
+    "energy_sources": [
+      "solar"
+    ],
+    "capacity_kw": 5000,
+    "location": "South Goa, Goa",
+    "status": "verified",
+    "verified_by": "69a34e3cc39812dd880eb6b5",
+    "created_at": "2025-12-30T20:21:16.241807+00:00",
+    "updated_at": "2026-02-25T20:21:16.241811+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb6da",
+    "owner_id": "69a34e3cc39812dd880eb6bc",
+    "company_name": "SunPower Rajasthan",
+    "description": "Utility-scale solar park in Jaisalmer, Rajasthan.",
+    "energy_sources": [
+      "solar"
+    ],
+    "capacity_kw": 80000,
+    "location": "Jaisalmer, Rajasthan",
+    "status": "verified",
+    "verified_by": "69a34e3cc39812dd880eb6b5",
+    "created_at": "2025-12-28T20:21:16.241816+00:00",
+    "updated_at": "2026-02-22T20:21:16.241822+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb6db",
+    "owner_id": "69a34e3cc39812dd880eb6bd",
+    "company_name": "Windharvest Gujarat",
+    "description": "Wind energy cluster in Kutch region, Gujarat.",
+    "energy_sources": [
+      "wind"
+    ],
+    "capacity_kw": 42000,
+    "location": "Kutch, Gujarat",
+    "status": "verified",
+    "verified_by": "69a34e3cc39812dd880eb6b5",
+    "created_at": "2025-12-05T20:21:16.241827+00:00",
+    "updated_at": "2026-02-21T20:21:16.241831+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb6dc",
+    "owner_id": "69a34e3cc39812dd880eb6be",
+    "company_name": "BioEnergy Maharashtra",
+    "description": "Biomass gasification plant using agricultural waste in Kolhapur.",
+    "energy_sources": [
+      "biomass"
+    ],
+    "capacity_kw": 12000,
+    "location": "Kolhapur, Maharashtra",
+    "status": "verified",
+    "verified_by": "69a34e3cc39812dd880eb6b5",
+    "created_at": "2025-10-20T20:21:16.241835+00:00",
+    "updated_at": "2026-02-23T20:21:16.241839+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb6dd",
+    "owner_id": "69a34e3cc39812dd880eb6bf",
+    "company_name": "GeoTherm Karnataka",
+    "description": "Experimental geothermal pilot in Raichur, Karnataka.",
+    "energy_sources": [
+      "geothermal"
+    ],
+    "capacity_kw": 3000,
+    "location": "Raichur, Karnataka",
+    "status": "pending",
+    "verified_by": null,
+    "created_at": "2025-12-20T20:21:16.241844+00:00",
+    "updated_at": "2026-02-23T20:21:16.241848+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb6de",
+    "owner_id": "69a34e3cc39812dd880eb6c0",
+    "company_name": "AquaPower Meghalaya",
+    "description": "Small hydro project on Umiam river, Meghalaya.",
+    "energy_sources": [
+      "hydro"
+    ],
+    "capacity_kw": 8000,
+    "location": "Shillong, Meghalaya",
+    "status": "pending",
+    "verified_by": null,
+    "created_at": "2025-11-25T20:21:16.241853+00:00",
+    "updated_at": "2026-02-25T20:21:16.241856+00:00"
+  }
+]

@@ -19,7 +19,7 @@ _LOG_FORMAT = (
 
 def setup_logging(level: Optional[str] = None) -> None:
     """Configure root logger with structured format."""
-    effective_level = level or ("DEBUG" if settings.DEBUG else "INFO")
+    effective_level = level or settings.LOG_LEVEL or ("DEBUG" if settings.DEBUG else "INFO")
     logging.basicConfig(
         level=effective_level,
         format=_LOG_FORMAT,
@@ -31,6 +31,8 @@ def setup_logging(level: Optional[str] = None) -> None:
     logging.getLogger("motor").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("asyncio").setLevel(logging.WARNING)
+    logging.getLogger("pymongo").setLevel(logging.WARNING)
+    logging.getLogger("pymongo.topology").setLevel(logging.WARNING)
 
 
 def get_logger(name: str) -> logging.Logger:

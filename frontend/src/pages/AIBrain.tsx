@@ -1,3 +1,5 @@
+// TODO: Backend integration partial — AI prediction/insights have no dedicated endpoint.
+// Map & zone data are client-side only. Connected: pricing + analytics for real energy data.
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
@@ -5,10 +7,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Sparkles, Zap, Shield, AlertTriangle, Sun, Wind, Droplets, Activity, MapPin, Play } from "lucide-react";
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { usePricingStream } from "@/hooks/usePricingStream";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-/* ── Data ─────────────────────────────────────────── */
+/* ── Data (TODO: Replace with API data when AI/ML endpoints are available) ── */
 const demandPrediction = [
   { hour: "Now", demand: 420, predicted: 420 }, { hour: "+2h", demand: 380, predicted: 390 },
   { hour: "+4h", demand: 360, predicted: 370 }, { hour: "+6h", demand: 480, predicted: 510 },
@@ -190,9 +194,21 @@ const AIBrain = () => {
   const [futureMode, setFutureMode] = useState<"present" | "2030" | "2035">("present");
   const [deployedPins, setDeployedPins] = useState<string[]>([]);
 
+  // Live data feeds for AI-enhanced recommendations
+  const { data: dashboard } = useAnalytics();
+  const { prices, isConnected } = usePricingStream();
+
+  // Use live avg price to adjust source cost estimates
+  const liveAvgPrice = useMemo(() => {
+    if (prices.length === 0) return null;
+    return prices.reduce((s, p) => s + p.price_per_kwh, 0) / prices.length;
+  }, [prices]);
+
   const recommendation = useMemo(() => {
     const scored = sources.map(s => {
-      const priceScore = (1 - s.price / 10) * budget;
+      // If live pricing available, adjust source price relative to market avg
+      const adjustedPrice = liveAvgPrice ? s.price * (liveAvgPrice / 6) : s.price;
+      const priceScore = (1 - adjustedPrice / 10) * budget;
       const carbonScore = (s.carbon / 200) * carbon;
       const relScore = (s.reliability / 100) * reliability;
       const locScore = (1 - s.distance / 15) * locality;
@@ -201,7 +217,7 @@ const AIBrain = () => {
     });
     scored.sort((a, b) => b.score - a.score);
     return scored;
-  }, [budget, carbon, reliability, locality]);
+  }, [budget, carbon, reliability, locality, liveAvgPrice]);
 
   const best = recommendation[0];
 
@@ -215,7 +231,13 @@ const AIBrain = () => {
   }, [aiOptimized]);
 
   const mapStats = useMemo(() => {
-    let renewable = 42, balance = 68, carbonRed = 22, stability = 78;
+    // Derive renewable % from energy_by_source when dashboard is available
+    const ebs = dashboard?.energy_by_source;
+    const baseRenewable = ebs ? Math.round(
+      Object.entries(ebs).filter(([k]) => ["solar","wind","hydro","biogas"].includes(k.toLowerCase())).reduce((s, [, v]) => s + v, 0)
+      / Math.max(1, Object.values(ebs).reduce((s, v) => s + v, 0)) * 100
+    ) : 42;
+    let renewable = baseRenewable, balance = 68, carbonRed = 22, stability = 78;
     if (aiOptimized) { renewable += 24; balance += 18; carbonRed += 15; stability += 12; }
     if (futureMode === "2030") { renewable += 18; balance += 10; carbonRed += 12; stability += 8; }
     if (futureMode === "2035") { renewable += 30; balance += 15; carbonRed += 20; stability += 12; }
@@ -223,7 +245,7 @@ const AIBrain = () => {
       renewable: Math.min(98, renewable), balance: Math.min(99, balance),
       carbonReduction: Math.min(95, carbonRed), stability: Math.min(99, stability),
     };
-  }, [aiOptimized, futureMode]);
+  }, [aiOptimized, futureMode, dashboard]);
 
   return (
     <AppLayout>
@@ -245,7 +267,7 @@ const AIBrain = () => {
                 <div>
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 border border-white/20 text-xs mb-4">
                     <Brain className="w-3 h-3 text-white animate-pulse" />
-                    <span className="text-white font-medium">GridMind AI Active</span>
+                    <span className="text-white font-medium">GridMind AI {isConnected ? "Live" : "Active"}</span>
                   </div>
                   <h1 className="text-2xl lg:text-3xl font-heading font-bold text-white mb-2">
                     AI Energy Intelligence + City Planner

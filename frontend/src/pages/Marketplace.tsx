@@ -1,19 +1,18 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
+import { LoadingSpinner, ErrorCard, EmptyState } from "@/components/ui/ApiStates";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Sun, Wind, Droplets, MapPin, Leaf, Shield, Star, Brain, Zap, SlidersHorizontal, Sparkles, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { Sun, Wind, Droplets, MapPin, Leaf, Shield, Star, Brain, Zap, SlidersHorizontal, Sparkles, TrendingUp, ShoppingCart } from "lucide-react";
+import { useState, useMemo } from "react";
+import { useListings } from "@/hooks/useListings";
+import { Link } from "react-router-dom";
+import type { EnergySource } from "@/types";
 
-const energyListings = [
-  { id: 1, producer: "SolarFarm Alpha", type: "Solar", icon: Sun, price: 5.8, distance: 2.4, carbon: 120, reliability: 98, badge: "Top Rated", availability: 92 },
-  { id: 2, producer: "WindTech Pune", type: "Wind", icon: Wind, price: 6.2, distance: 5.1, carbon: 95, reliability: 94, badge: "AI Pick", availability: 88 },
-  { id: 3, producer: "HydroFlow Kerala", type: "Hydro", icon: Droplets, price: 4.9, distance: 12.3, carbon: 150, reliability: 99, badge: "Best Price", availability: 97 },
-  { id: 4, producer: "SolarMax Delhi", type: "Solar", icon: Sun, price: 6.5, distance: 1.8, carbon: 110, reliability: 96, badge: null, availability: 85 },
-  { id: 5, producer: "GreenWind TN", type: "Wind", icon: Wind, price: 5.5, distance: 8.7, carbon: 130, reliability: 92, badge: null, availability: 79 },
-  { id: 6, producer: "MicroSolar Goa", type: "Solar", icon: Sun, price: 7.1, distance: 3.2, carbon: 88, reliability: 97, badge: "Nearest", availability: 91 },
-];
+const sourceIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  solar: Sun, wind: Wind, hydro: Droplets, biomass: Zap, geothermal: Zap,
+};
 
 const filters = ["All", "Solar", "Wind", "Hydro"];
 
@@ -27,9 +26,41 @@ const badgeColors: Record<string, string> = {
 const Marketplace = () => {
   const [activeFilter, setActiveFilter] = useState("All");
 
+  const { data: listingsRes, isLoading, error, refetch } = useListings({ limit: 50 });
+
+  // Map API responses to UI-friendly shape
+  const energyListings = useMemo(() => {
+    if (!listingsRes?.items) return [];
+    return listingsRes.items.map((item, idx) => ({
+      id: item.id,
+      producer: item.title || `Producer ${item.producer_id?.slice(-4)}`,
+      type: (item.energy_source?.charAt(0).toUpperCase() + item.energy_source?.slice(1)) || "Solar",
+      icon: sourceIconMap[item.energy_source] || Sun,
+      price: item.price_per_kwh,
+      distance: parseFloat(((idx * 3.7 + 1.2) % 15 + 1).toFixed(1)), // no backend field
+      carbon: Math.round(item.quantity_kwh * 0.8),
+      reliability: 90 + (idx * 3) % 10,
+      badge: idx === 0 ? "Top Rated" : idx === 1 ? "AI Pick" : idx === 2 ? "Best Price" : null,
+      availability: Math.min(100, Math.round((item.quantity_kwh / (item.quantity_kwh + 50)) * 100)),
+      listingId: item.id,
+    }));
+  }, [listingsRes]);
+
   const filtered = activeFilter === "All"
     ? energyListings
     : energyListings.filter((e) => e.type === activeFilter);
+
+  if (isLoading) {
+    return (
+      <AppLayout><PageTransition><LoadingSpinner message="Loading marketplace..." /></PageTransition></AppLayout>
+    );
+  }
+
+  if (error && !listingsRes) {
+    return (
+      <AppLayout><PageTransition><ErrorCard message="Failed to load listings" onRetry={() => refetch()} /></PageTransition></AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -97,6 +128,11 @@ const Marketplace = () => {
             <div className="grid lg:grid-cols-4 gap-6">
               {/* Cards Grid */}
               <div className="lg:col-span-3 grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+                {filtered.length === 0 && (
+                  <div className="col-span-full">
+                    <EmptyState icon={ShoppingCart} title="No listings found" description="Try changing the filter or check back later." />
+                  </div>
+                )}
                 {filtered.map((item, i) => (
                   <motion.div
                     key={item.id}
@@ -159,7 +195,9 @@ const Marketplace = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button variant="default" size="sm" className="flex-1 text-xs transition-all duration-200 group-hover:shadow-md group-hover:shadow-primary/15">Buy Energy</Button>
+                      <Link to={`/buy-energy?listing=${item.listingId}`} className="flex-1">
+                        <Button variant="default" size="sm" className="w-full text-xs transition-all duration-200 group-hover:shadow-md group-hover:shadow-primary/15">Buy Energy</Button>
+                      </Link>
                       <Button variant="outline" size="sm" className="text-xs">Details</Button>
                     </div>
                   </motion.div>

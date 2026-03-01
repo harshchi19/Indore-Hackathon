@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { PageTransition } from "@/components/ui/PageTransition";
+import { LoadingSpinner, ErrorCard, EmptyState } from "@/components/ui/ApiStates";
+import { useContracts } from "@/hooks/useContracts";
 
 interface Contract {
   id: string;
@@ -30,72 +32,40 @@ interface Contract {
   progress: number;
 }
 
-const mockContracts: Contract[] = [
-  {
-    id: "CTR-2024-001",
-    title: "Solar Energy Supply Agreement",
-    counterparty: "SunPower Industries",
-    counterpartyType: "producer",
-    energyType: "solar",
-    volume: "5,000 kWh",
-    pricePerUnit: "₹4.50/kWh",
-    totalValue: "₹22,500",
-    startDate: "Jan 15, 2024",
-    endDate: "Jul 15, 2024",
-    status: "active",
-    deliveredVolume: "3,200 kWh",
-    progress: 64,
-  },
-  {
-    id: "CTR-2024-002",
-    title: "Wind Energy Purchase",
-    counterparty: "WindTech Solutions",
-    counterpartyType: "producer",
-    energyType: "wind",
-    volume: "10,000 kWh",
-    pricePerUnit: "₹3.80/kWh",
-    totalValue: "₹38,000",
-    startDate: "Feb 01, 2024",
-    endDate: "Aug 01, 2024",
-    status: "pending",
-    deliveredVolume: "0 kWh",
-    progress: 0,
-  },
-  {
-    id: "CTR-2024-003",
-    title: "Biogas Supply Contract",
-    counterparty: "GreenBio Energy",
-    counterpartyType: "producer",
-    energyType: "biogas",
-    volume: "2,500 kWh",
-    pricePerUnit: "₹5.20/kWh",
-    totalValue: "₹13,000",
-    startDate: "Dec 01, 2023",
-    endDate: "Mar 01, 2024",
-    status: "completed",
-    deliveredVolume: "2,500 kWh",
-    progress: 100,
-  },
-  {
-    id: "CTR-2024-004",
-    title: "Hydro Power Agreement",
-    counterparty: "AquaPower Ltd",
-    counterpartyType: "producer",
-    energyType: "hydro",
-    volume: "8,000 kWh",
-    pricePerUnit: "₹4.00/kWh",
-    totalValue: "₹32,000",
-    startDate: "Jan 10, 2024",
-    endDate: "Apr 10, 2024",
-    status: "disputed",
-    deliveredVolume: "4,800 kWh",
-    progress: 60,
-  },
-];
-
 const Contracts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+
+  const { data: contractsRes, isLoading, error, refetch } = useContracts({ limit: 100 });
+
+  // Map API response to UI-friendly shape
+  const contracts: Contract[] = useMemo(() => {
+    if (!contractsRes?.items) return [];
+    return contractsRes.items.map((c) => {
+      const statusMap: Record<string, Contract["status"]> = {
+        pending: "pending", active: "active", settled: "completed", disputed: "disputed",
+      };
+      // Deterministic progress based on creation age (days since created / 90 days cap)
+      const ageMs = Date.now() - new Date(c.created_at).getTime();
+      const ageDays = Math.floor(ageMs / 86400000);
+      const progress = c.status === "settled" ? 100 : c.status === "pending" ? 0 : Math.min(90, Math.max(10, Math.round(ageDays / 90 * 80 + 10)));
+      return {
+        id: c.id,
+        title: `${c.contract_type === "spot" ? "Spot" : "Scheduled"} Energy Contract`,
+        counterparty: c.producer_id?.slice(-6) || "Unknown",
+        counterpartyType: "producer" as const,
+        energyType: "solar" as Contract["energyType"],
+        volume: `${c.volume_kwh.toLocaleString()} kWh`,
+        pricePerUnit: `₹${c.price_per_kwh.toFixed(2)}/kWh`,
+        totalValue: `₹${c.total_amount.toLocaleString()}`,
+        startDate: new Date(c.created_at).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }),
+        endDate: c.settled_at ? new Date(c.settled_at).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }) : "Ongoing",
+        status: statusMap[c.status] || "pending",
+        deliveredVolume: `${Math.round(c.volume_kwh * progress / 100).toLocaleString()} kWh`,
+        progress,
+      };
+    });
+  }, [contractsRes]);
 
   const getStatusColor = (status: Contract["status"]) => {
     switch (status) {
@@ -147,18 +117,30 @@ const Contracts = () => {
   };
 
   const stats = {
-    total: mockContracts.length,
-    active: mockContracts.filter((c) => c.status === "active").length,
-    pending: mockContracts.filter((c) => c.status === "pending").length,
-    totalValue: "₹1,05,500",
+    total: contracts.length,
+    active: contracts.filter((c) => c.status === "active").length,
+    pending: contracts.filter((c) => c.status === "pending").length,
+    totalValue: `₹${contracts.reduce((s, c) => s + parseFloat(c.totalValue.replace(/[₹,]/g, "")), 0).toLocaleString()}`,
   };
 
-  const filteredContracts = mockContracts.filter(
+  const filteredContracts = contracts.filter(
     (contract) =>
       contract.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       contract.counterparty.toLowerCase().includes(searchQuery.toLowerCase()) ||
       contract.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <AppLayout><PageTransition><LoadingSpinner message="Loading contracts..." /></PageTransition></AppLayout>
+    );
+  }
+
+  if (error && !contractsRes) {
+    return (
+      <AppLayout><PageTransition><ErrorCard message="Failed to load contracts" onRetry={() => refetch()} /></PageTransition></AppLayout>
+    );
+  }
 
   return (
     <AppLayout>

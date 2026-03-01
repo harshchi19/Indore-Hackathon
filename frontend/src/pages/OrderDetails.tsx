@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,56 +11,73 @@ import {
 } from "lucide-react";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { PageTransition } from "@/components/ui/PageTransition";
+import { LoadingSpinner, ErrorCard } from "@/components/ui/ApiStates";
 import { useNavigate, useParams } from "react-router-dom";
+import { useContract } from "@/hooks/useContracts";
+import { usePayments } from "@/hooks/usePayments";
+import { useCertificates } from "@/hooks/useCertificates";
 
 const OrderDetails = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
 
-  // Demo order data
-  const order = {
-    id: orderId || "ORD-2024-7821",
-    status: "completed",
-    type: "buy",
-    energyType: "Solar",
-    quantity: 450,
-    pricePerUnit: 4.25,
-    totalAmount: 1912.5,
-    platformFee: 38.25,
-    netAmount: 1950.75,
-    createdAt: "2024-01-15T10:30:00Z",
-    completedAt: "2024-01-15T10:32:15Z",
-    producer: {
-      name: "SunPower Solar Farm",
-      id: "PROD-001",
-      location: "Rajasthan, India",
-      rating: 4.9,
-      verified: true,
-    },
-    consumer: {
-      name: "Tech Park Industries",
-      id: "CON-042",
-      location: "Mumbai, India",
-    },
-    blockchain: {
-      txHash: "0x7f8a3b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c",
-      blockNumber: 18547823,
-      gasUsed: "0.0023 ETH",
-      network: "Polygon",
-    },
-    certificates: [
-      { id: "REC-2024-1234", type: "REC", status: "issued" },
-      { id: "GO-2024-5678", type: "Guarantee of Origin", status: "issued" },
-    ],
-    timeline: [
-      { time: "10:30:00", event: "Order Created", status: "completed" },
-      { time: "10:30:05", event: "Payment Verified", status: "completed" },
-      { time: "10:30:12", event: "Producer Confirmed", status: "completed" },
-      { time: "10:31:45", event: "Energy Transfer Started", status: "completed" },
-      { time: "10:32:15", event: "Transfer Complete", status: "completed" },
-      { time: "10:32:20", event: "Certificates Issued", status: "completed" },
-    ],
-  };
+  const { data: contract, isLoading, error, refetch } = useContract(orderId || "");
+  const { data: paymentsRes } = usePayments({ contract_id: orderId, limit: 5 });
+  const { data: certsRes } = useCertificates({ contract_id: orderId, limit: 10 });
+
+  const order = useMemo(() => {
+    if (!contract) return null;
+    const payment = paymentsRes?.items?.[0];
+    const certs = certsRes?.items ?? [];
+    const totalAmount = contract.total_amount;
+    const platformFee = Math.round(totalAmount * 0.02 * 100) / 100;
+    return {
+      id: contract.id.slice(0, 12).toUpperCase(),
+      status: contract.status === "settled" ? "completed" : contract.status,
+      type: "buy",
+      energyType: contract.contract_type === "spot" ? "Spot" : "Scheduled",
+      quantity: contract.volume_kwh,
+      pricePerUnit: contract.price_per_kwh,
+      totalAmount,
+      platformFee,
+      netAmount: totalAmount + platformFee,
+      createdAt: contract.created_at,
+      completedAt: contract.settled_at || contract.updated_at || contract.created_at,
+      producer: {
+        name: `Producer ${contract.producer_id.slice(-6)}`,
+        id: contract.producer_id.slice(0, 12),
+        location: "India",
+        rating: 4.8,
+        verified: true,
+      },
+      consumer: {
+        name: `Buyer ${contract.buyer_id.slice(-6)}`,
+        id: contract.buyer_id.slice(0, 12),
+        location: "India",
+      },
+      blockchain: {
+        txHash: contract.contract_hash || `0x${contract.id.replace(/-/g, "")}`,
+        blockNumber: parseInt(contract.id.replace(/\D/g, "").slice(0, 8)) || 0,
+        gasUsed: "0.0023 ETH",
+        network: "Polygon",
+      },
+      certificates: certs.length > 0
+        ? certs.map(c => ({ id: c.id.slice(0, 14), type: c.energy_source || "REC", status: "issued" }))
+        : [{ id: "—", type: "Pending", status: "pending" }],
+      timeline: [
+        { time: new Date(contract.created_at).toLocaleTimeString(), event: "Order Created", status: "completed" },
+        ...(payment ? [{ time: new Date(payment.created_at).toLocaleTimeString(), event: "Payment Verified", status: "completed" }] : []),
+        ...(contract.signature_buyer ? [{ time: "—", event: "Buyer Signed", status: "completed" }] : []),
+        ...(contract.signature_producer ? [{ time: "—", event: "Producer Signed", status: "completed" }] : []),
+        ...(contract.settled_at ? [
+          { time: new Date(contract.settled_at).toLocaleTimeString(), event: "Transfer Complete", status: "completed" },
+        ] : []),
+      ],
+    };
+  }, [contract, paymentsRes, certsRes]);
+
+  if (isLoading) return <AppLayout><PageTransition><LoadingSpinner message="Loading order details..." /></PageTransition></AppLayout>;
+  if (error || !order) return <AppLayout><PageTransition><ErrorCard message="Failed to load order details" onRetry={refetch} /></PageTransition></AppLayout>;
 
   const statusColors: Record<string, string> = {
     completed: "bg-primary/10 text-primary border-primary/20",

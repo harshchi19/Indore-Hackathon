@@ -7,9 +7,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Zap, Mail, Lock, User, Building2, ArrowRight, Eye, EyeOff, Sun, ShoppingBag } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Register = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -29,11 +33,19 @@ const Register = () => {
       return;
     }
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const role = formData.userType === "both" ? "consumer" : formData.userType;
+      await register(formData.email, formData.password, formData.name, role);
       navigate("/kyc");
-    }, 1500);
+    } catch (err: any) {
+      toast({
+        title: "Registration failed",
+        description: err?.response?.data?.detail || "Could not create account",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

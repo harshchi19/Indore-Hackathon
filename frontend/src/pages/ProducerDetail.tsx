@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,58 +10,80 @@ import {
   MapPin, Calendar, Clock, Award, TrendingUp, Users, CheckCircle,
   MessageSquare, FileText, Building, Globe, Mail, Phone, ExternalLink
 } from "lucide-react";
+import { LoadingSpinner, ErrorCard } from "@/components/ui/ApiStates";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { PageTransition } from "@/components/ui/PageTransition";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { useProducer } from "@/hooks/useProducers";
+import { useListings } from "@/hooks/useListings";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 const ProducerDetail = () => {
   const navigate = useNavigate();
   const { producerId } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Demo producer data
-  const producer = {
-    id: producerId || "PROD-001",
-    name: "SunPower Solar Farm",
-    tagline: "Harvesting Clean Energy Since 2018",
-    logo: "☀️",
-    verified: true,
-    premium: true,
-    rating: 4.9,
-    totalReviews: 847,
-    location: "Jodhpur, Rajasthan",
-    country: "India",
-    established: "2018",
-    energyTypes: ["solar", "wind"],
-    totalCapacity: 15000, // kWh/day
-    totalDelivered: 2500000, // kWh all time
-    activeContracts: 42,
-    co2Saved: 1250, // tons
-    description: "SunPower Solar Farm is a leading renewable energy producer in Rajasthan, operating one of the largest solar installations in Western India. We are committed to providing clean, affordable, and reliable solar energy to consumers and businesses.",
-    contact: {
-      email: "contact@sunpowerfarm.in",
-      phone: "+91 98765 43210",
-      website: "www.sunpowerfarm.in",
-    },
-    certifications: [
-      { name: "ISO 14001", year: "2020" },
-      { name: "Green-e Certified", year: "2021" },
-      { name: "REC Certified", year: "2019" },
-      { name: "MNRE Approved", year: "2018" },
-    ],
-    stats: {
-      uptime: 99.7,
-      fulfillmentRate: 99.2,
-      avgResponseTime: "< 15 min",
-      repeatCustomers: 78,
-    },
-    listings: [
-      { id: 1, type: "Solar", capacity: 500, price: 4.25, availability: "24/7" },
-      { id: 2, type: "Solar", capacity: 1000, price: 4.10, availability: "Peak Hours" },
-      { id: 3, type: "Wind", capacity: 750, price: 4.50, availability: "24/7" },
-    ],
-  };
+  // Fetch producer from API
+  const { data: apiProducer, isLoading, error, refetch } = useProducer(producerId!);
+
+  // Fetch listings for this producer
+  const { data: listingsRes } = useListings({ limit: 20 });
+
+  const producerListings = useMemo(() => {
+    if (!listingsRes?.items || !producerId) return [];
+    return listingsRes.items
+      .filter((l) => l.producer_id === producerId)
+      .map((l) => ({
+        id: l.id,
+        type: l.energy_source.charAt(0).toUpperCase() + l.energy_source.slice(1),
+        capacity: l.quantity_kwh,
+        price: l.price_per_kwh,
+        availability: "24/7",
+      }));
+  }, [listingsRes, producerId]);
+
+  // Map API data to UI shape
+  const producer = useMemo(() => {
+    if (!apiProducer) return null;
+    const src = (apiProducer.energy_sources?.[0] || "solar").toLowerCase();
+    return {
+      id: apiProducer.id,
+      name: apiProducer.company_name,
+      tagline: apiProducer.description || "Clean Energy Producer",
+      logo: src === "solar" ? "☀️" : src === "wind" ? "🌬️" : src === "hydro" ? "💧" : "⚡",
+      verified: apiProducer.status === "verified",
+      premium: apiProducer.capacity_kw >= 5000,
+      rating: 4.8,
+      totalReviews: Math.round(apiProducer.capacity_kw / 10),
+      location: apiProducer.location,
+      country: "India",
+      established: new Date(apiProducer.created_at).getFullYear().toString(),
+      energyTypes: apiProducer.energy_sources.map((e) => e.toLowerCase()),
+      totalCapacity: apiProducer.capacity_kw,
+      totalDelivered: Math.round(apiProducer.capacity_kw * 200),
+      activeContracts: Math.round(apiProducer.capacity_kw / 50),
+      co2Saved: Math.round(apiProducer.capacity_kw * 0.5),
+      description: apiProducer.description || `${apiProducer.company_name} is a renewable energy producer offering clean energy solutions.`,
+      contact: {
+        email: `contact@${apiProducer.company_name.toLowerCase().replace(/\s+/g, "")}.in`,
+        phone: "+91 98765 43210",
+        website: `www.${apiProducer.company_name.toLowerCase().replace(/\s+/g, "")}.in`,
+      },
+      certifications: [
+        { name: "ISO 14001", year: "2020" },
+        { name: "Green-e Certified", year: "2021" },
+        { name: "REC Certified", year: "2019" },
+      ],
+      stats: {
+        uptime: 99.7,
+        fulfillmentRate: 99.2,
+        avgResponseTime: "< 15 min",
+        repeatCustomers: 78,
+      },
+      listings: producerListings,
+    };
+  }, [apiProducer, producerListings]);
 
   const productionData = [
     { month: "Jan", production: 450000, target: 400000 },
@@ -84,6 +106,10 @@ const ProducerDetail = () => {
     hydro: { icon: Droplets, color: "text-blue-400" },
     biogas: { icon: Leaf, color: "text-primary" },
   };
+
+  if (isLoading) return <AppLayout><PageTransition><div className="p-6"><LoadingSpinner /></div></PageTransition></AppLayout>;
+  if (error) return <AppLayout><PageTransition><div className="p-6"><ErrorCard message="Failed to load producer" onRetry={refetch} /></div></PageTransition></AppLayout>;
+  if (!producer) return <AppLayout><PageTransition><div className="p-6"><ErrorCard message="Producer not found" /></div></PageTransition></AppLayout>;
 
   return (
     <AppLayout>

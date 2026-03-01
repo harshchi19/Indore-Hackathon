@@ -1,3 +1,6 @@
+// TODO: Backend integration pending — No /api/v1/grid-simulation endpoint exists yet.
+// This page is a client-side energy infrastructure simulator with hardcoded nodes/connections.
+// When a grid simulation API is created, replace static data with service calls.
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
@@ -6,6 +9,7 @@ import { Globe, Zap, Activity, AlertTriangle, Shield, Sun, Wind, Droplets, Facto
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
+/* TODO: Replace with API data when backend grid simulation endpoint is available */
 /* ── Simulated network nodes ─────────────────────── */
 const nodeData = [
   { id: "solar1", label: "Solar Farm A", type: "source", icon: Sun, x: 8, y: 22, color: "hsl(30 100% 60%)" },

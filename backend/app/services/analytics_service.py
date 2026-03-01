@@ -115,11 +115,9 @@ async def monthly_aggregation(
             {
                 "year": doc["_id"]["year"],
                 "month": doc["_id"]["month"],
-                "total_volume_kwh": round(vol, 4),
-                "total_amount_eur": round(doc["total_amount"], 2),
-                "contract_count": doc["contract_count"],
+                "total_kwh": round(vol, 4),
+                "contracts_count": doc["contract_count"],
                 "co2_avoided_kg": co2_kg,
-                "co2_avoided_tonnes": round(co2_kg / 1000, 6),
             }
         )
 
@@ -128,15 +126,19 @@ async def monthly_aggregation(
 
 async def dashboard_summary(producer_id: Optional[str] = None) -> dict:
     """
-    High-level dashboard stats: total kWh, CO₂ avoided, producer performance.
+    High-level dashboard stats matching the frontend AnalyticsDashboard type.
+    Returns: total_energy_kwh, total_co2_avoided_kg, total_contracts,
+             total_certificates, energy_by_source, monthly_trend.
     """
     db = get_db()
-    collection = db["contracts"]
+    contracts_coll = db["contracts"]
+    certs_coll = db["certificates"]
 
     match_stage: dict = {"status": ContractStatus.SETTLED.value}
     if producer_id:
         match_stage["producer_id"] = PydanticObjectId(producer_id)
 
+    # ── Total volume / contract count ─────────────────────────────────────
     pipeline = [
         {"$match": match_stage},
         {
@@ -145,40 +147,79 @@ async def dashboard_summary(producer_id: Optional[str] = None) -> dict:
                 "total_volume_kwh": {"$sum": "$volume_kwh"},
                 "total_amount": {"$sum": "$total_amount"},
                 "contract_count": {"$sum": 1},
-                "avg_price_per_kwh": {"$avg": "$price_per_kwh"},
             }
         },
     ]
 
     result = None
-    async for doc in collection.aggregate(pipeline):
+    async for doc in contracts_coll.aggregate(pipeline):
         result = doc
+
+    # ── Energy-by-source via lookup to energy_listings ────────────────────
+    source_pipeline = [
+        {"$match": match_stage},
+        {
+            "$lookup": {
+                "from": "energy_listings",
+                "localField": "listing_id",
+                "foreignField": "_id",
+                "as": "listing",
+            }
+        },
+        {
+            "$addFields": {
+                "energy_source": {
+                    "$ifNull": [
+                        {"$arrayElemAt": ["$listing.energy_source", 0]},
+                        "solar",
+                    ]
+                }
+            }
+        },
+        {
+            "$group": {
+                "_id": "$energy_source",
+                "total_kwh": {"$sum": "$volume_kwh"},
+            }
+        },
+    ]
+
+    energy_by_source: Dict[str, float] = {}
+    async for doc in contracts_coll.aggregate(source_pipeline):
+        energy_by_source[str(doc["_id"])] = round(doc["total_kwh"], 4)
+
+    # ── Certificate count ─────────────────────────────────────────────────
+    total_certs = await certs_coll.count_documents({})
+
+    # ── Monthly trend for current year ────────────────────────────────────
+    current_year = datetime.now(timezone.utc).year
+    monthly = await monthly_aggregation(current_year, producer_id=producer_id)
 
     if result is None:
         return {
-            "total_volume_kwh": 0,
-            "total_amount_eur": 0,
-            "contract_count": 0,
-            "avg_price_per_kwh": 0,
-            "co2_avoided_kg": 0,
-            "co2_avoided_tonnes": 0,
+            "total_energy_kwh": 0,
+            "total_co2_avoided_kg": 0,
+            "total_contracts": 0,
+            "total_certificates": total_certs,
+            "energy_by_source": energy_by_source,
+            "monthly_trend": monthly,
         }
 
     vol = result["total_volume_kwh"]
     co2_kg = round(vol * DEFAULT_FACTOR, 4)
 
     return {
-        "total_volume_kwh": round(vol, 4),
-        "total_amount_eur": round(result["total_amount"], 2),
-        "contract_count": result["contract_count"],
-        "avg_price_per_kwh": round(result.get("avg_price_per_kwh", 0), 6),
-        "co2_avoided_kg": co2_kg,
-        "co2_avoided_tonnes": round(co2_kg / 1000, 6),
+        "total_energy_kwh": round(vol, 4),
+        "total_co2_avoided_kg": co2_kg,
+        "total_contracts": result["contract_count"],
+        "total_certificates": total_certs,
+        "energy_by_source": energy_by_source,
+        "monthly_trend": monthly,
     }
 
 
 async def producer_performance(top_n: int = 10) -> list[dict]:
-    """Rank producers by total kWh settled."""
+    """Rank producers by total kWh settled, including company name via lookup."""
     db = get_db()
     collection = db["contracts"]
 
@@ -194,18 +235,29 @@ async def producer_performance(top_n: int = 10) -> list[dict]:
         },
         {"$sort": {"total_volume_kwh": -1}},
         {"$limit": top_n},
+        {
+            "$lookup": {
+                "from": "producers",
+                "localField": "_id",
+                "foreignField": "_id",
+                "as": "producer",
+            }
+        },
     ]
 
     results = []
     async for doc in collection.aggregate(pipeline):
         vol = doc["total_volume_kwh"]
+        producer_doc = doc["producer"][0] if doc.get("producer") else {}
         results.append(
             {
                 "producer_id": str(doc["_id"]),
-                "total_volume_kwh": round(vol, 4),
-                "total_amount_eur": round(doc["total_amount"], 2),
-                "contract_count": doc["contract_count"],
+                "company_name": producer_doc.get(
+                    "company_name", f"Producer {str(doc['_id'])[-4:]}"
+                ),
+                "total_kwh": round(vol, 4),
                 "co2_avoided_kg": round(vol * DEFAULT_FACTOR, 4),
+                "contracts_count": doc["contract_count"],
             }
         )
 

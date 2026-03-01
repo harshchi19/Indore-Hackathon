@@ -2,32 +2,12 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
+import { LoadingSpinner, ErrorCard, EmptyState } from "@/components/ui/ApiStates";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Scale, FileText, Upload, MessageSquare, Clock, CheckCircle, AlertCircle, Plus, ArrowRight, History, LucideIcon } from "lucide-react";
-import { useState } from "react";
-
-const disputes = [
-  { id: "DSP-2026-001", title: "Energy Delivery Shortfall", contract: "CON-2026-042", status: "open", priority: "high", created: "2026-02-26", lastUpdate: "1 hour ago" },
-  { id: "DSP-2026-002", title: "Billing Discrepancy", contract: "CON-2026-038", status: "reviewing", priority: "medium", created: "2026-02-24", lastUpdate: "3 hours ago" },
-  { id: "DSP-2026-003", title: "Certificate Authenticity", contract: "CON-2026-031", status: "resolved", priority: "low", created: "2026-02-20", lastUpdate: "2 days ago" },
-  { id: "DSP-2026-004", title: "Payment Delay", contract: "CON-2026-029", status: "resolved", priority: "medium", created: "2026-02-18", lastUpdate: "5 days ago" },
-];
-
-const selectedDispute = disputes[0];
-
-const auditLog = [
-  { time: "2026-02-26 14:32", action: "Dispute opened by consumer", actor: "Arjun S." },
-  { time: "2026-02-26 15:10", action: "Evidence uploaded: meter_readings.pdf", actor: "Arjun S." },
-  { time: "2026-02-26 16:45", action: "Assigned to resolution team", actor: "System" },
-  { time: "2026-02-27 09:20", action: "Producer notified", actor: "System" },
-];
-
-const messages = [
-  { id: 1, from: "Arjun S.", role: "Consumer", message: "I received only 420 kWh out of the contracted 500 kWh this week.", time: "Feb 26, 2:32 PM" },
-  { id: 2, from: "Resolution Team", role: "Mediator", message: "We have received your complaint. We're reviewing the meter data and will respond within 24 hours.", time: "Feb 26, 4:45 PM" },
-  { id: 3, from: "SolarFarm Alpha", role: "Producer", message: "We experienced a brief maintenance downtime. We can offer a 20% discount on next delivery.", time: "Feb 27, 10:15 AM" },
-];
+import { useState, useMemo } from "react";
+import { useDisputes } from "@/hooks/useDisputes";
 
 const statusColors: Record<string, { bg: string; text: string; icon: LucideIcon }> = {
   open: { bg: "bg-saffron/10", text: "text-saffron", icon: AlertCircle },
@@ -42,7 +22,53 @@ const priorityColors: Record<string, string> = {
 };
 
 const Disputes = () => {
-  const [activeDispute, setActiveDispute] = useState(selectedDispute);
+  const { data: disputesRes, isLoading, error, refetch } = useDisputes({ limit: 50 });
+
+  const disputes = useMemo(() => {
+    if (!disputesRes?.items) return [];
+    return disputesRes.items.map((d) => ({
+      id: d.id,
+      title: d.description.slice(0, 50) || "Dispute",
+      contract: d.contract_id,
+      status: d.status,
+      priority: d.status === "open" ? "high" : d.status === "reviewing" ? "medium" : "low",
+      created: new Date(d.created_at).toISOString().split("T")[0],
+      lastUpdate: d.updated_at ? new Date(d.updated_at).toLocaleString() : "N/A",
+      evidence: d.evidence || [],
+      auditLog: d.audit_log || [],
+      resolutionNote: d.resolution_note,
+    }));
+  }, [disputesRes]);
+
+  const [activeDispute, setActiveDispute] = useState<typeof disputes[0] | null>(null);
+
+  // Update active dispute if data loaded
+  const currentDispute = activeDispute || disputes[0] || null;
+
+  const auditLog = useMemo(() => {
+    if (!currentDispute?.auditLog?.length) return [];
+    return currentDispute.auditLog.map((entry: any) => ({
+      time: entry.timestamp ? new Date(entry.timestamp).toLocaleString() : "",
+      action: entry.action,
+      actor: entry.actor,
+    }));
+  }, [currentDispute]);
+
+  const messages = useMemo(() => {
+    if (!currentDispute) return [];
+    return [
+      { id: 1, from: currentDispute.id, role: "Reporter", message: currentDispute.title, time: currentDispute.created },
+      ...(currentDispute.resolutionNote ? [{ id: 2, from: "Resolution Team", role: "Mediator", message: currentDispute.resolutionNote, time: currentDispute.lastUpdate }] : []),
+    ];
+  }, [currentDispute]);
+
+  if (isLoading) {
+    return <AppLayout><PageTransition><LoadingSpinner message="Loading disputes..." /></PageTransition></AppLayout>;
+  }
+
+  if (error && !disputesRes) {
+    return <AppLayout><PageTransition><ErrorCard message="Failed to load disputes" onRetry={() => refetch()} /></PageTransition></AppLayout>;
+  }
 
   return (
     <AppLayout>
@@ -113,7 +139,7 @@ const Disputes = () => {
                   {disputes.map((dispute, i) => {
                     const status = statusColors[dispute.status];
                     const StatusIcon = status.icon;
-                    const isActive = activeDispute.id === dispute.id;
+                    const isActive = currentDispute?.id === dispute.id;
                     return (
                       <motion.div
                         key={dispute.id}
@@ -157,10 +183,10 @@ const Disputes = () => {
                 <div className="bg-card rounded-xl p-5 border border-border">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-heading font-semibold text-foreground flex items-center gap-2">
-                      <Scale className="w-4 h-4 text-primary" /> {activeDispute.id}
+                      <Scale className="w-4 h-4 text-primary" /> {currentDispute?.id}
                     </h3>
-                    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[activeDispute.status].bg} ${statusColors[activeDispute.status].text}`}>
-                      {activeDispute.status.toUpperCase()}
+                    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[currentDispute?.status || 'open'].bg} ${statusColors[currentDispute?.status || 'open'].text}`}>
+                      {currentDispute?.status?.toUpperCase()}
                     </span>
                   </div>
 
@@ -168,25 +194,25 @@ const Disputes = () => {
                     <div className="space-y-3 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Title</span>
-                        <span className="text-foreground font-medium">{activeDispute.title}</span>
+                        <span className="text-foreground font-medium">{currentDispute?.title}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Contract</span>
-                        <span className="font-mono text-foreground">{activeDispute.contract}</span>
+                        <span className="font-mono text-foreground">{currentDispute?.contract}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Priority</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs ${priorityColors[activeDispute.priority]}`}>{activeDispute.priority}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${priorityColors[currentDispute?.priority || 'low']}`}>{currentDispute?.priority}</span>
                       </div>
                     </div>
                     <div className="space-y-3 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Created</span>
-                        <span className="text-foreground">{activeDispute.created}</span>
+                        <span className="text-foreground">{currentDispute?.created}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Last Update</span>
-                        <span className="text-foreground">{activeDispute.lastUpdate}</span>
+                        <span className="text-foreground">{currentDispute?.lastUpdate}</span>
                       </div>
                     </div>
                   </div>

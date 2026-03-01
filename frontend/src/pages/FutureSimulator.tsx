@@ -1,3 +1,5 @@
+// TODO: Backend integration partial — Simulator is client-side.
+// Connected: pricing service for current energy rates used in projections.
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
@@ -6,14 +8,22 @@ import { motion } from "framer-motion";
 import { Sparkles, TrendingUp, Leaf, Zap, Calendar } from "lucide-react";
 import { useState, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { usePricingStream } from "@/hooks/usePricingStream";
 
 const FutureSimulator = () => {
   const [usage, setUsage] = useState(500);
   const [adoption, setAdoption] = useState(40);
   const [investment, setInvestment] = useState(50000);
 
+  // Use real-time pricing when available for more accurate cost projections
+  const { prices } = usePricingStream();
+  const avgPrice = useMemo(() => {
+    if (prices.length === 0) return 6.5; // fallback
+    return prices.reduce((s, p) => s + p.price_per_kwh, 0) / prices.length;
+  }, [prices]);
+
   const projections = useMemo(() => {
-    const base = { carbon: usage * 0.5 * (adoption / 100), money: usage * 6.5 * (adoption / 100) * 0.18, renewable: adoption, independence: Math.min(95, adoption * 1.2 + investment / 10000) };
+    const base = { carbon: usage * 0.5 * (adoption / 100), money: usage * avgPrice * (adoption / 100) * 0.18, renewable: adoption, independence: Math.min(95, adoption * 1.2 + investment / 10000) };
     return [
       { year: "Now", carbon: 0, money: 0, renewable: adoption, independence: base.independence * 0.6 },
       { year: "Year 1", carbon: Math.round(base.carbon * 12), money: Math.round(base.money * 12), renewable: Math.min(95, adoption + 5), independence: Math.min(90, base.independence * 0.75) },
@@ -21,7 +31,7 @@ const FutureSimulator = () => {
       { year: "Year 3", carbon: Math.round(base.carbon * 36 * 1.2), money: Math.round(base.money * 36 * 1.3), renewable: Math.min(95, adoption + 18), independence: Math.min(94, base.independence * 0.92) },
       { year: "Year 5", carbon: Math.round(base.carbon * 60 * 1.35), money: Math.round(base.money * 60 * 1.5), renewable: Math.min(98, adoption + 27), independence: Math.min(97, base.independence) },
     ];
-  }, [usage, adoption, investment]);
+  }, [usage, adoption, investment, avgPrice]);
 
   const yr5 = projections[projections.length - 1];
 

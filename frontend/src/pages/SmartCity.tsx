@@ -1,3 +1,5 @@
+// TODO: Backend integration partial — No city/zone API endpoint exists.
+// Policy simulator and zone data are client-side. Connected: analytics for energy totals.
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
@@ -6,6 +8,9 @@ import { motion } from "framer-motion";
 import { Building2, Sparkles, Sun, Wind, Zap, Leaf, Shield, TrendingUp, MapPin } from "lucide-react";
 import { useState, useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from "recharts";
+import { useAnalytics } from "@/hooks/useAnalytics";
+
+/* TODO: Replace with API data when city/zone endpoints are available */
 
 const cities = ["Delhi", "Mumbai", "Bangalore", "Chennai", "Pune"];
 
@@ -36,13 +41,22 @@ const SmartCity = () => {
   const [solarAdoption, setSolarAdoption] = useState(30);
   const [selectedZone, setSelectedZone] = useState<number | null>(null);
 
+  // Real analytics data for energy totals
+  const { data: dashboard } = useAnalytics();
+
   const policyImpact = useMemo(() => {
+    // Derive renewable % from energy_by_source when available
+    const ebs = dashboard?.energy_by_source;
+    const baseRenewable = ebs ? Math.round(
+      Object.entries(ebs).filter(([k]) => ["solar","wind","hydro","biogas"].includes(k.toLowerCase())).reduce((s, [, v]) => s + v, 0)
+      / Math.max(1, Object.values(ebs).reduce((s, v) => s + v, 0)) * 100
+    ) : 55;
     const carbonReduction = Math.round(solarAdoption * 0.45);
     const energyIndependence = Math.round(40 + solarAdoption * 0.55);
-    const renewableAdoption = Math.round(55 + solarAdoption * 0.4);
+    const renewableAdoption = Math.round(baseRenewable + solarAdoption * 0.4);
     const gridStability = Math.min(98, Math.round(75 + solarAdoption * 0.2));
     return { carbonReduction, energyIndependence, renewableAdoption, gridStability };
-  }, [solarAdoption]);
+  }, [solarAdoption, dashboard]);
 
   return (
     <AppLayout>
@@ -71,6 +85,11 @@ const SmartCity = () => {
                   </h1>
                   <p className="text-sm text-white/70 max-w-lg">
                     Real-time city-level energy intelligence and policy simulation.
+                    {dashboard && (
+                      <span className="block mt-1 text-white/60">
+                        Platform total: {dashboard.total_energy_kwh?.toLocaleString() ?? "—"} kWh traded • {dashboard.total_co2_avoided_kg?.toLocaleString() ?? "—"} kg CO₂ avoided
+                      </span>
+                    )}
                   </p>
                 </div>
                 <select value={selectedCity} onChange={e => setSelectedCity(e.target.value)}

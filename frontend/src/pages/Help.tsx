@@ -1,3 +1,5 @@
+// TODO: Backend integration pending — Contact form does not submit to any API endpoint yet.
+// FAQ content is static. When a /api/v1/support endpoint is created, wire the contact form.
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { AppLayout } from "@/components/layout/AppLayout";

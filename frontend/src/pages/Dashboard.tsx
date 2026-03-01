@@ -2,11 +2,32 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
+import { LoadingSpinner, ErrorCard } from "@/components/ui/ApiStates";
 import { motion } from "framer-motion";
 import { Zap, Leaf, ShoppingCart, TrendingUp, Brain, ArrowUpRight, ArrowDownRight, Sun, Wind, Battery, Droplets, Sparkles, Activity } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { useListings } from "@/hooks/useListings";
+import { useMemo } from "react";
 
-const energyData = [
+const sourceIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  solar: Sun,
+  wind: Wind,
+  hydro: Droplets,
+  biomass: Battery,
+  geothermal: Battery,
+};
+
+const sourceColorMap: Record<string, string> = {
+  solar: "bg-saffron",
+  wind: "bg-accent",
+  hydro: "bg-primary",
+  biomass: "bg-muted-foreground",
+  geothermal: "bg-muted-foreground",
+};
+
+/* Fallback chart data when no monthly trend available */
+const fallbackEnergyData = [
   { time: "6AM", supply: 200, demand: 180 },
   { time: "8AM", supply: 320, demand: 400 },
   { time: "10AM", supply: 500, demand: 380 },
@@ -18,7 +39,7 @@ const energyData = [
   { time: "10PM", supply: 120, demand: 280 },
 ];
 
-const cityData = [
+const fallbackCityData = [
   { city: "Delhi", usage: 2400 },
   { city: "Mumbai", usage: 1800 },
   { city: "Bangalore", usage: 1600 },
@@ -26,21 +47,62 @@ const cityData = [
   { city: "Pune", usage: 900 },
 ];
 
-const stats = [
-  { label: "Energy Traded", value: "8,420", unit: "kWh", change: "+12.4%", up: true, icon: Zap, gradient: "from-primary/20 to-primary/5" },
-  { label: "Carbon Saved", value: "3,200", unit: "kg", change: "+8.2%", up: true, icon: Leaf, gradient: "from-primary/20 to-primary/5" },
-  { label: "Active Listings", value: "234", unit: "", change: "+5.1%", up: true, icon: ShoppingCart, gradient: "from-accent/20 to-accent/5" },
-  { label: "Avg Price", value: "₹6.40", unit: "/kWh", change: "-2.1%", up: false, icon: TrendingUp, gradient: "from-saffron/20 to-saffron/5" },
-];
-
-const energySources = [
-  { type: "Solar", icon: Sun, amount: "4,200 kWh", pct: 50, color: "bg-saffron" },
-  { type: "Wind", icon: Wind, amount: "2,100 kWh", pct: 25, color: "bg-accent" },
-  { type: "Hydro", icon: Droplets, amount: "1,260 kWh", pct: 15, color: "bg-primary" },
-  { type: "Battery", icon: Battery, amount: "840 kWh", pct: 10, color: "bg-muted-foreground" },
-];
-
 const Dashboard = () => {
+  const { data: dashboard, isLoading, error, refetch } = useAnalytics();
+
+  const { data: listings } = useListings({ limit: 100 });
+
+  const activeListingsCount = listings?.items?.filter(l => l.status === "active").length ?? 0;
+
+  const stats = useMemo(() => [
+    { label: "Energy Traded", value: dashboard ? (dashboard.total_energy_kwh ?? 0).toLocaleString() : "---", unit: "kWh", change: "+12.4%", up: true, icon: Zap, gradient: "from-primary/20 to-primary/5" },
+    { label: "Carbon Saved", value: dashboard ? (dashboard.total_co2_avoided_kg ?? 0).toLocaleString() : "---", unit: "kg", change: "+8.2%", up: true, icon: Leaf, gradient: "from-primary/20 to-primary/5" },
+    { label: "Active Listings", value: activeListingsCount.toString(), unit: "", change: "+5.1%", up: true, icon: ShoppingCart, gradient: "from-accent/20 to-accent/5" },
+    { label: "Avg Price", value: "₹6.40", unit: "/kWh", change: "-2.1%", up: false, icon: TrendingUp, gradient: "from-saffron/20 to-saffron/5" },
+  ], [dashboard, activeListingsCount]);
+
+  const energySources = useMemo(() => {
+    if (!dashboard?.energy_by_source) return [];
+    const entries = Object.entries(dashboard.energy_by_source);
+    const total = entries.reduce((sum, [, v]) => sum + v, 0) || 1;
+    return entries.map(([src, kwh]) => ({
+      type: src.charAt(0).toUpperCase() + src.slice(1),
+      icon: sourceIconMap[src] || Battery,
+      amount: `${kwh.toLocaleString()} kWh`,
+      pct: Math.round((kwh / total) * 100),
+      color: sourceColorMap[src] || "bg-muted-foreground",
+    }));
+  }, [dashboard]);
+
+  const chartData = useMemo(() => {
+    if (!dashboard?.monthly_trend?.length) return fallbackEnergyData;
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return dashboard.monthly_trend.map((m) => ({
+      time: months[m.month - 1] || `M${m.month}`,
+      supply: m.total_kwh,
+      demand: Math.round(m.total_kwh * 0.85),
+    }));
+  }, [dashboard]);
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <PageTransition>
+          <LoadingSpinner message="Loading dashboard..." />
+        </PageTransition>
+      </AppLayout>
+    );
+  }
+
+  if (error && !dashboard) {
+    return (
+      <AppLayout>
+        <PageTransition>
+          <ErrorCard message="Failed to load dashboard data" onRetry={() => refetch()} />
+        </PageTransition>
+      </AppLayout>
+    );
+  }
   return (
     <AppLayout>
       <PageTransition>
@@ -78,14 +140,14 @@ const Dashboard = () => {
                 <div className="flex items-center gap-6">
                   <div className="text-center">
                     <p className="text-3xl font-heading font-bold text-white">
-                      <AnimatedCounter end={12430} suffix="" />
+                      <AnimatedCounter end={dashboard?.total_energy_kwh ?? 0} suffix="" />
                     </p>
                     <p className="text-[11px] text-white/60 mt-1">kWh Flowing Now</p>
                   </div>
                   <div className="w-px h-10 bg-white/20" />
                   <div className="text-center">
                     <p className="text-3xl font-heading font-bold text-white">
-                      <AnimatedCounter end={3200} suffix="" />
+                      <AnimatedCounter end={dashboard?.total_co2_avoided_kg ?? 0} suffix="" />
                     </p>
                     <p className="text-[11px] text-white/60 mt-1">kg CO₂ Saved Today</p>
                   </div>
@@ -108,19 +170,19 @@ const Dashboard = () => {
                 <span className="flex items-center gap-2 whitespace-nowrap">
                   <Zap className="w-3.5 h-3.5 text-primary" />
                   <span className="text-muted-foreground text-xs">Energy Traded:</span>
-                  <span className="font-heading font-bold text-foreground"><AnimatedCounter end={8420} suffix=" kWh" /></span>
+                  <span className="font-heading font-bold text-foreground"><AnimatedCounter end={dashboard?.total_energy_kwh ?? 0} suffix=" kWh" /></span>
                 </span>
                 <span className="w-px h-4 bg-border flex-shrink-0" />
                 <span className="flex items-center gap-2 whitespace-nowrap">
                   <Leaf className="w-3.5 h-3.5 text-primary" />
                   <span className="text-muted-foreground text-xs">Carbon Saved:</span>
-                  <span className="font-heading font-bold text-foreground"><AnimatedCounter end={3200} suffix=" kg" /></span>
+                  <span className="font-heading font-bold text-foreground"><AnimatedCounter end={dashboard?.total_co2_avoided_kg ?? 0} suffix=" kg" /></span>
                 </span>
                 <span className="w-px h-4 bg-border flex-shrink-0" />
                 <span className="flex items-center gap-2 whitespace-nowrap">
                   <Sun className="w-3.5 h-3.5 text-saffron" />
                   <span className="text-muted-foreground text-xs">Active Producers:</span>
-                  <span className="font-heading font-bold text-foreground"><AnimatedCounter end={847} suffix="+" /></span>
+                  <span className="font-heading font-bold text-foreground"><AnimatedCounter end={dashboard?.total_contracts ?? 0} suffix="+" /></span>
                 </span>
               </div>
             </motion.div>
@@ -173,7 +235,7 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <ResponsiveContainer width="100%" height={260}>
-                  <AreaChart data={energyData}>
+                  <AreaChart data={chartData}>
                     <defs>
                       <linearGradient id="supplyGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="hsl(142 72% 40%)" stopOpacity={0.3} />
@@ -322,7 +384,7 @@ const Dashboard = () => {
               >
                 <h3 className="font-heading font-semibold text-foreground mb-5">City Energy Usage</h3>
                 <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={cityData}>
+                  <BarChart data={fallbackCityData}>
                     <defs>
                       <linearGradient id="cityGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="hsl(142 72% 40%)" stopOpacity={1} />

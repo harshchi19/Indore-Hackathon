@@ -21,7 +21,8 @@ argon2-cffi==23.1.0
 # Task queue (Part B will extend with Celery workers)
 # celery==5.4.0  # uncomment when needed
 
-# WebSockets (included via uvicorn[standard])
+# WebSockets (explicit for Render / Docker compatibility)
+websockets>=12.0
 
 # Utilities
 python-dotenv==1.0.1

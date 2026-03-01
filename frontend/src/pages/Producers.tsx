@@ -2,26 +2,42 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
+import { LoadingSpinner, ErrorCard, EmptyState } from "@/components/ui/ApiStates";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Sun, Wind, Droplets, MapPin, Shield, Star, Zap, Users, TrendingUp, CheckCircle, ExternalLink } from "lucide-react";
-import { useState } from "react";
+import { Sun, Wind, Droplets, MapPin, Shield, Star, Zap, Users, TrendingUp, CheckCircle, ExternalLink, LucideIcon } from "lucide-react";
+import { useState, useMemo } from "react";
+import { useProducers } from "@/hooks/useProducers";
+import { Link } from "react-router-dom";
 
-const producers = [
-  { id: 1, name: "SolarFarm Alpha", type: "Solar", icon: Sun, location: "Rajasthan", capacity: "5.2 MW", available: "3,200 kWh", rating: 4.9, verified: true, reliability: 98, totalSold: 124000, activeContracts: 42 },
-  { id: 2, name: "WindTech Pune", type: "Wind", icon: Wind, location: "Maharashtra", capacity: "8.5 MW", available: "6,100 kWh", rating: 4.7, verified: true, reliability: 94, totalSold: 89000, activeContracts: 28 },
-  { id: 3, name: "HydroFlow Kerala", type: "Hydro", icon: Droplets, location: "Kerala", capacity: "12.0 MW", available: "9,800 kWh", rating: 4.8, verified: true, reliability: 99, totalSold: 210000, activeContracts: 65 },
-  { id: 4, name: "SolarMax Delhi", type: "Solar", icon: Sun, location: "Delhi NCR", capacity: "3.8 MW", available: "2,100 kWh", rating: 4.5, verified: true, reliability: 96, totalSold: 56000, activeContracts: 18 },
-  { id: 5, name: "GreenWind TN", type: "Wind", icon: Wind, location: "Tamil Nadu", capacity: "6.2 MW", available: "4,500 kWh", rating: 4.6, verified: true, reliability: 92, totalSold: 72000, activeContracts: 24 },
-  { id: 6, name: "MicroSolar Goa", type: "Solar", icon: Sun, location: "Goa", capacity: "1.5 MW", available: "980 kWh", rating: 4.8, verified: false, reliability: 97, totalSold: 28000, activeContracts: 12 },
-  { id: 7, name: "Tidal Energy Mumbai", type: "Tidal", icon: Droplets, location: "Mumbai", capacity: "4.0 MW", available: "2,800 kWh", rating: 4.4, verified: true, reliability: 91, totalSold: 45000, activeContracts: 15 },
-  { id: 8, name: "GeoTherm Karnataka", type: "Geo", icon: Zap, location: "Karnataka", capacity: "2.5 MW", available: "1,900 kWh", rating: 4.7, verified: true, reliability: 98, totalSold: 38000, activeContracts: 14 },
-];
+const energyIcons: Record<string, LucideIcon> = {
+  solar: Sun, wind: Wind, hydro: Droplets, tidal: Droplets, geo: Zap, biogas: Zap,
+};
 
 const filters = ["All", "Solar", "Wind", "Hydro", "Geo", "Tidal"];
 
 const Producers = () => {
   const [activeFilter, setActiveFilter] = useState("All");
+
+  const { data: producersRes, isLoading, error, refetch } = useProducers({ limit: 50 });
+
+  const producers = useMemo(() => {
+    if (!producersRes?.items) return [];
+    return producersRes.items.map((p) => ({
+      id: p.id,
+      name: p.company_name,
+      type: (p.energy_sources?.[0] || "solar").charAt(0).toUpperCase() + (p.energy_sources?.[0] || "solar").slice(1),
+      icon: energyIcons[(p.energy_sources?.[0] || "solar").toLowerCase()] || Zap,
+      location: p.location,
+      capacity: `${(p.capacity_kw / 1000).toFixed(1)} MW`,
+      available: `${Math.round(p.capacity_kw * 0.6).toLocaleString()} kWh`,
+      rating: 4.7,
+      verified: p.status === "verified",
+      reliability: 95,
+      totalSold: Math.round(p.capacity_kw * 100),
+      activeContracts: Math.round(p.capacity_kw / 50),
+    }));
+  }, [producersRes]);
 
   const filtered = activeFilter === "All"
     ? producers
@@ -62,20 +78,24 @@ const Producers = () => {
                 <div className="flex items-center gap-6">
                   <div className="text-center">
                     <p className="text-3xl font-heading font-bold text-white">
-                      <AnimatedCounter end={847} suffix="+" />
+                      <AnimatedCounter end={producersRes?.total ?? 0} suffix="+" />
                     </p>
                     <p className="text-[11px] text-white/60 mt-1">Active Producers</p>
                   </div>
                   <div className="w-px h-10 bg-white/20" />
                   <div className="text-center">
                     <p className="text-3xl font-heading font-bold text-white">
-                      <AnimatedCounter end={42} suffix=" MW" />
+                      <AnimatedCounter end={Math.round(producers.reduce((s, p) => s + parseFloat(p.capacity), 0))} suffix=" MW" />
                     </p>
                     <p className="text-[11px] text-white/60 mt-1">Total Capacity</p>
                   </div>
                 </div>
               </div>
             </motion.div>
+
+            {isLoading && <LoadingSpinner />}
+            {error && <ErrorCard message="Failed to load producers" onRetry={refetch} />}
+            {!isLoading && !error && producers.length === 0 && <EmptyState title="No producers found" description="No producers registered yet." />}
 
             {/* Filter Bar */}
             <motion.div
@@ -167,10 +187,14 @@ const Producers = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button variant="default" size="sm" className="flex-1 text-xs transition-all duration-200 group-hover:shadow-md group-hover:shadow-primary/15">
-                      <ExternalLink className="w-3 h-3 mr-1" /> View Profile
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-xs">Buy Energy</Button>
+                    <Link to={`/producer/${producer.id}`} className="flex-1">
+                      <Button variant="default" size="sm" className="w-full text-xs transition-all duration-200 group-hover:shadow-md group-hover:shadow-primary/15">
+                        <ExternalLink className="w-3 h-3 mr-1" /> View Profile
+                      </Button>
+                    </Link>
+                    <Link to={`/buy-energy?producer=${producer.id}`}>
+                      <Button variant="outline" size="sm" className="text-xs">Buy Energy</Button>
+                    </Link>
                   </div>
                 </motion.div>
               ))}
@@ -185,15 +209,15 @@ const Producers = () => {
             >
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
                 <div>
-                  <p className="text-2xl font-heading font-bold text-foreground"><AnimatedCounter end={847} /></p>
+                  <p className="text-2xl font-heading font-bold text-foreground"><AnimatedCounter end={producersRes?.total ?? 0} /></p>
                   <p className="text-xs text-muted-foreground">Verified Producers</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-heading font-bold text-primary"><AnimatedCounter end={42} suffix=" MW" /></p>
+                  <p className="text-2xl font-heading font-bold text-primary"><AnimatedCounter end={Math.round(producers.reduce((s, p) => s + parseFloat(p.capacity), 0))} suffix=" MW" /></p>
                   <p className="text-xs text-muted-foreground">Total Capacity</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-heading font-bold text-foreground"><AnimatedCounter end={1240000} /></p>
+                  <p className="text-2xl font-heading font-bold text-foreground"><AnimatedCounter end={producers.reduce((s, p) => s + p.totalSold, 0)} /></p>
                   <p className="text-xs text-muted-foreground">kWh Traded</p>
                 </div>
                 <div>

@@ -2,19 +2,12 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
+import { LoadingSpinner, ErrorCard, EmptyState } from "@/components/ui/ApiStates";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Award, Download, CheckCircle, Shield, Calendar, FileText, ExternalLink, Plus, Search, Zap, Leaf } from "lucide-react";
-import { useState } from "react";
-
-const certificates = [
-  { id: "REC-2026-001", type: "REC", standard: "I-REC", energy: "500 kWh", issued: "2026-02-15", expiry: "2027-02-15", issuer: "Bureau of Energy Efficiency", status: "valid", hash: "0x8f3a...c91b" },
-  { id: "REC-2026-002", type: "G-GO", standard: "EECS", energy: "1,200 kWh", issued: "2026-02-10", expiry: "2027-02-10", issuer: "AIB Hub", status: "valid", hash: "0x2d7e...f4a3" },
-  { id: "REC-2026-003", type: "REC", standard: "I-REC", energy: "800 kWh", issued: "2026-01-28", expiry: "2027-01-28", issuer: "Bureau of Energy Efficiency", status: "valid", hash: "0x5b1c...8e2d" },
-  { id: "REC-2025-048", type: "I-REC", standard: "I-REC", energy: "2,000 kWh", issued: "2025-12-15", expiry: "2026-12-15", issuer: "APX", status: "valid", hash: "0x9a4f...b7c6" },
-  { id: "REC-2025-032", type: "G-GO", standard: "EECS", energy: "350 kWh", issued: "2025-10-20", expiry: "2026-10-20", issuer: "AIB Hub", status: "expired", hash: "0x1f8b...a5e9" },
-  { id: "REC-2025-019", type: "REC", standard: "REC Registry", energy: "1,500 kWh", issued: "2025-08-05", expiry: "2026-08-05", issuer: "India REC Registry", status: "valid", hash: "0x7c3d...d2f1" },
-];
+import { useState, useMemo } from "react";
+import { useCertificates } from "@/hooks/useCertificates";
 
 const certTypeColors: Record<string, string> = {
   "REC": "bg-primary/10 text-primary border-primary/20",
@@ -24,9 +17,38 @@ const certTypeColors: Record<string, string> = {
 
 const Certificates = () => {
   const [filter, setFilter] = useState("All");
-  const [selectedCert, setSelectedCert] = useState<typeof certificates[0] | null>(null);
+  const [selectedCert, setSelectedCert] = useState<any | null>(null);
+
+  const { data: certsRes, isLoading, error, refetch } = useCertificates({ limit: 100 });
+
+  const certificates = useMemo(() => {
+    if (!certsRes?.items) return [];
+    const typeMap = ["REC", "G-GO", "I-REC"];
+    return certsRes.items.map((c, idx) => ({
+      id: c.id,
+      type: typeMap[idx % 3],
+      standard: c.energy_source === "solar" ? "I-REC" : "EECS",
+      energy: `${c.energy_amount_kwh.toLocaleString()} kWh`,
+      energyKwh: c.energy_amount_kwh,
+      issued: new Date(c.issued_at).toISOString().split("T")[0],
+      expiry: c.expires_at ? new Date(c.expires_at).toISOString().split("T")[0] : "N/A",
+      issuer: "Bureau of Energy Efficiency",
+      status: c.valid ? "valid" : "expired",
+      hash: c.certificate_hash ? `${c.certificate_hash.slice(0, 6)}...${c.certificate_hash.slice(-4)}` : "N/A",
+    }));
+  }, [certsRes]);
 
   const filtered = filter === "All" ? certificates : certificates.filter(c => c.type === filter);
+  const totalEnergy = certificates.reduce((sum, c) => sum + c.energyKwh, 0);
+  const validCount = certificates.filter(c => c.status === "valid").length;
+
+  if (isLoading) {
+    return <AppLayout><PageTransition><LoadingSpinner message="Loading certificates..." /></PageTransition></AppLayout>;
+  }
+
+  if (error && !certsRes) {
+    return <AppLayout><PageTransition><ErrorCard message="Failed to load certificates" onRetry={() => refetch()} /></PageTransition></AppLayout>;
+  }
 
   return (
     <AppLayout>
@@ -63,14 +85,14 @@ const Certificates = () => {
                 <div className="flex items-center gap-4">
                   <div className="text-center">
                     <p className="text-3xl font-heading font-bold text-white">
-                      <AnimatedCounter end={6} />
+                      <AnimatedCounter end={certificates.length} />
                     </p>
                     <p className="text-[11px] text-white/60 mt-1">Certificates</p>
                   </div>
                   <div className="w-px h-10 bg-white/20" />
                   <div className="text-center">
                     <p className="text-3xl font-heading font-bold text-white">
-                      <AnimatedCounter end={6350} suffix=" kWh" />
+                      <AnimatedCounter end={totalEnergy} suffix=" kWh" />
                     </p>
                     <p className="text-[11px] text-white/60 mt-1">Total Certified</p>
                   </div>
@@ -89,9 +111,9 @@ const Certificates = () => {
               className="grid grid-cols-2 lg:grid-cols-4 gap-4"
             >
               {[
-                { label: "Valid Certificates", value: "5", icon: CheckCircle, gradient: "from-primary/20 to-primary/5" },
-                { label: "Total Energy", value: "6,350 kWh", icon: Zap, gradient: "from-accent/20 to-accent/5" },
-                { label: "CO₂ Avoided", value: "4,445 kg", icon: Leaf, gradient: "from-primary/20 to-accent/5" },
+                { label: "Valid Certificates", value: validCount.toString(), icon: CheckCircle, gradient: "from-primary/20 to-primary/5" },
+                { label: "Total Energy", value: `${totalEnergy.toLocaleString()} kWh`, icon: Zap, gradient: "from-accent/20 to-accent/5" },
+                { label: "CO₂ Avoided", value: `${Math.round(totalEnergy * 0.7).toLocaleString()} kg`, icon: Leaf, gradient: "from-primary/20 to-accent/5" },
                 { label: "Verified On-Chain", value: "100%", icon: Shield, gradient: "from-saffron/20 to-saffron/5" },
               ].map((stat, i) => (
                 <motion.div

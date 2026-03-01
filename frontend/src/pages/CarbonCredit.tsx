@@ -2,11 +2,13 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
+import { LoadingSpinner, ErrorCard } from "@/components/ui/ApiStates";
 import { motion } from "framer-motion";
 import { Leaf, Sparkles, TrendingUp, TrendingDown, ArrowUpRight, Medal, Crown, Award, Zap, ShoppingCart } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
+import { useAnalytics, useProducerPerformance } from "@/hooks/useAnalytics";
 
 const priceHistory = [
   { time: "9AM", price: 12.4 }, { time: "10AM", price: 12.8 }, { time: "11AM", price: 13.1 },
@@ -44,7 +46,34 @@ const rankIcons = [Crown, Medal, Award];
 const CarbonCredit = () => {
   const [tradeAmount, setTradeAmount] = useState(10);
   const [activeTab, setActiveTab] = useState<"consumers" | "producers" | "investors">("consumers");
-  const currentPrice = 15.2;
+
+  const { data: dashboard, isLoading, error, refetch } = useAnalytics();
+
+  const { data: performers } = useProducerPerformance(5);
+
+  const totalCredits = useMemo(() => {
+    if (!dashboard) return 0;
+    return Math.round(dashboard.total_co2_avoided_kg / 10);
+  }, [dashboard]);
+
+  const creditPrice = useMemo(() => {
+    if (!dashboard) return 15.2;
+    return Math.round(dashboard.total_energy_kwh / Math.max(totalCredits, 1) * 100) / 100 || 15.2;
+  }, [dashboard, totalCredits]);
+
+  const currentPrice = creditPrice;
+
+  const producerLeaderboard = useMemo(() => {
+    if (!performers?.length) return leaderboard.producers;
+    return performers.map((p) => ({
+      name: p.company_name,
+      score: Math.round(p.total_kwh),
+      badge: "⚡",
+    }));
+  }, [performers]);
+
+  if (isLoading) return <AppLayout><PageTransition><LoadingSpinner message="Loading carbon credit data..." /></PageTransition></AppLayout>;
+  if (error) return <AppLayout><PageTransition><ErrorCard message={error.message} onRetry={refetch} /></PageTransition></AppLayout>;
 
   return (
     <AppLayout>
@@ -76,7 +105,7 @@ const CarbonCredit = () => {
                   </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-4xl font-heading font-bold text-white">248</p>
+                  <p className="text-4xl font-heading font-bold text-white">{totalCredits}</p>
                   <p className="text-[11px] text-white/60">Your Carbon Credits</p>
                 </div>
               </div>
@@ -85,10 +114,10 @@ const CarbonCredit = () => {
             {/* Credit Balance + Earning */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
               {[
-                { label: "Credits Earned", value: "186", sub: "From renewables", icon: Zap, gradient: "from-primary/20 to-primary/5" },
-                { label: "Credits Invested", value: "62", sub: "From investments", icon: TrendingUp, gradient: "from-saffron/20 to-saffron/5" },
-                { label: "Market Price", value: "₹15.2", sub: "Per credit", icon: ShoppingCart, gradient: "from-accent/20 to-accent/5" },
-                { label: "Portfolio Value", value: "₹3,770", sub: "248 × ₹15.2", icon: Sparkles, gradient: "from-primary/20 to-accent/5" },
+                { label: "Credits Earned", value: String(Math.round(totalCredits * 0.75)), sub: "From renewables", icon: Zap, gradient: "from-primary/20 to-primary/5" },
+                { label: "Credits Invested", value: String(Math.round(totalCredits * 0.25)), sub: "From investments", icon: TrendingUp, gradient: "from-saffron/20 to-saffron/5" },
+                { label: "Market Price", value: `₹${currentPrice.toFixed(1)}`, sub: "Per credit", icon: ShoppingCart, gradient: "from-accent/20 to-accent/5" },
+                { label: "Portfolio Value", value: `₹${(totalCredits * currentPrice).toLocaleString()}`, sub: `${totalCredits} × ₹${currentPrice.toFixed(1)}`, icon: Sparkles, gradient: "from-primary/20 to-accent/5" },
               ].map((stat, i) => (
                 <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + i * 0.08 }}
@@ -182,7 +211,7 @@ const CarbonCredit = () => {
                 </div>
 
                 <div className="space-y-2">
-                  {leaderboard[activeTab].map((entry, i) => {
+                  {(activeTab === "producers" ? producerLeaderboard : leaderboard[activeTab]).map((entry, i) => {
                     const RankIcon = i < 3 ? rankIcons[i] : null;
                     return (
                       <motion.div key={entry.name} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}

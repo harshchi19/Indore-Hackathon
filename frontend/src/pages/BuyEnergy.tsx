@@ -2,23 +2,47 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
+import { LoadingSpinner, ErrorCard } from "@/components/ui/ApiStates";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Sun, Wind, Droplets, Zap, Calculator, ShoppingBag, Plus, Minus, FileText, CheckCircle, ArrowRight, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Sun, Wind, Droplets, Zap, Calculator, ShoppingBag, Plus, Minus, FileText, CheckCircle, ArrowRight, Sparkles, LucideIcon } from "lucide-react";
+import { useState, useMemo } from "react";
+import { useListings, useBuyEnergy } from "@/hooks/useListings";
 
-const energyListings = [
-  { id: 1, producer: "SolarFarm Alpha", type: "Solar", icon: Sun, price: 5.8, available: 3200, reliability: 98, color: "from-saffron/20 to-saffron/5" },
-  { id: 2, producer: "WindTech Pune", type: "Wind", icon: Wind, price: 6.2, available: 6100, reliability: 94, color: "from-accent/20 to-accent/5" },
-  { id: 3, producer: "HydroFlow Kerala", type: "Hydro", icon: Droplets, price: 4.9, available: 9800, reliability: 99, color: "from-primary/20 to-primary/5" },
-];
+const sourceIcons: Record<string, { icon: LucideIcon; color: string }> = {
+  solar: { icon: Sun, color: "from-saffron/20 to-saffron/5" },
+  wind: { icon: Wind, color: "from-accent/20 to-accent/5" },
+  hydro: { icon: Droplets, color: "from-primary/20 to-primary/5" },
+};
 
 const BuyEnergy = () => {
-  const [selectedListings, setSelectedListings] = useState<number[]>([]);
+  const [selectedListings, setSelectedListings] = useState<string[]>([]);
   const [volume, setVolume] = useState(100);
   const [showContract, setShowContract] = useState(false);
 
-  const toggleSelection = (id: number) => {
+  const { data: listingsRes, isLoading, error, refetch } = useListings({ status: "active" as any, limit: 20 });
+
+  const energyListings = useMemo(() => {
+    if (!listingsRes?.items) return [];
+    return listingsRes.items.map((l) => {
+      const src = l.energy_source.toLowerCase();
+      const info = sourceIcons[src] || sourceIcons.solar;
+      return {
+        id: l.id,
+        producer: l.title || l.producer_id,
+        type: l.energy_source.charAt(0).toUpperCase() + l.energy_source.slice(1),
+        icon: info.icon,
+        price: l.price_per_kwh,
+        available: l.quantity_kwh,
+        reliability: 96,
+        color: info.color,
+      };
+    });
+  }, [listingsRes]);
+
+  const buyMutation = useBuyEnergy();
+
+  const toggleSelection = (id: string) => {
     setSelectedListings(prev => 
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
@@ -62,6 +86,9 @@ const BuyEnergy = () => {
                 </p>
               </div>
             </motion.div>
+
+            {isLoading && <LoadingSpinner />}
+            {error && <ErrorCard message="Failed to load listings" onRetry={refetch} />}
 
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Listings Selection */}
@@ -255,9 +282,22 @@ const BuyEnergy = () => {
                         <span className="text-foreground">Weekly</span>
                       </div>
                     </div>
-                    <Button className="w-full mt-5" variant="default">
-                      Create Contract <ArrowRight className="w-4 h-4 ml-2" />
+                    <Button className="w-full mt-5" variant="default"
+                      disabled={buyMutation.isPending}
+                      onClick={() => {
+                        selectedItems.forEach(item => {
+                          buyMutation.mutate({ listing_id: item.id, quantity_kwh: volume });
+                        });
+                      }}
+                    >
+                      {buyMutation.isPending ? "Processing..." : "Create Contract"} <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
+                    {buyMutation.isSuccess && (
+                      <p className="text-xs text-primary mt-2 text-center">Purchase successful!</p>
+                    )}
+                    {buyMutation.isError && (
+                      <p className="text-xs text-destructive mt-2 text-center">Purchase failed. Try again.</p>
+                    )}
                   </motion.div>
                 )}
               </motion.div>

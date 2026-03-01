@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { PageTransition } from "@/components/ui/PageTransition";
+import { LoadingSpinner, ErrorCard } from "@/components/ui/ApiStates";
+import { usePayments } from "@/hooks/usePayments";
 
 interface Transaction {
   id: string;
@@ -27,75 +29,52 @@ interface Transaction {
   category: "energy_purchase" | "energy_sale" | "deposit" | "withdrawal" | "refund";
 }
 
-const mockTransactions: Transaction[] = [
-  {
-    id: "TXN-001",
-    type: "debit",
-    description: "Solar Energy Purchase from SunPower",
-    amount: "₹1,125",
-    timestamp: "Today, 10:45 AM",
-    status: "completed",
-    category: "energy_purchase",
-  },
-  {
-    id: "TXN-002",
-    type: "credit",
-    description: "Energy Sale to GreenTech Corp",
-    amount: "₹864",
-    timestamp: "Today, 09:30 AM",
-    status: "completed",
-    category: "energy_sale",
-  },
-  {
-    id: "TXN-003",
-    type: "credit",
-    description: "Wallet Top-up via UPI",
-    amount: "₹5,000",
-    timestamp: "Yesterday, 04:15 PM",
-    status: "completed",
-    category: "deposit",
-  },
-  {
-    id: "TXN-004",
-    type: "debit",
-    description: "Wind Energy Purchase",
-    amount: "₹1,900",
-    timestamp: "Yesterday, 11:20 AM",
-    status: "pending",
-    category: "energy_purchase",
-  },
-  {
-    id: "TXN-005",
-    type: "credit",
-    description: "Refund - Cancelled Contract",
-    amount: "₹780",
-    timestamp: "2 days ago",
-    status: "completed",
-    category: "refund",
-  },
-];
-
-const balanceHistory = [
-  { date: "Mon", balance: 8500 },
-  { date: "Tue", balance: 9200 },
-  { date: "Wed", balance: 8800 },
-  { date: "Thu", balance: 10500 },
-  { date: "Fri", balance: 12300 },
-  { date: "Sat", balance: 11800 },
-  { date: "Sun", balance: 12450 },
-];
-
 const WalletPage = () => {
   const [copied, setCopied] = useState(false);
   const [addAmount, setAddAmount] = useState("");
 
+  const { data: paymentsRes, isLoading, error, refetch } = usePayments({ limit: 50 });
+
+  const transactions: Transaction[] = useMemo(() => {
+    if (!paymentsRes?.items) return [];
+    return paymentsRes.items.map((p) => ({
+      id: p.id,
+      type: p.amount > 0 ? "debit" as const : "credit" as const,
+      description: `Payment ${p.id.slice(0, 8)} - Contract ${p.contract_id.slice(0, 8)}`,
+      amount: `₹${Math.abs(p.amount).toLocaleString()}`,
+      timestamp: new Date(p.created_at).toLocaleString(),
+      status: (p.status === "completed" ? "completed" : p.status === "pending" ? "pending" : "failed") as Transaction["status"],
+      category: "energy_purchase" as const,
+    }));
+  }, [paymentsRes]);
+
+  const totalSpent = useMemo(() => {
+    if (!paymentsRes?.items) return 0;
+    return paymentsRes.items.filter(p => p.status === "completed").reduce((s, p) => s + p.amount, 0);
+  }, [paymentsRes]);
+
+  const pendingAmount = useMemo(() => {
+    if (!paymentsRes?.items) return 0;
+    return paymentsRes.items.filter(p => p.status === "pending").reduce((s, p) => s + p.amount, 0);
+  }, [paymentsRes]);
+
   const walletData = {
-    balance: "₹12,450",
-    pendingBalance: "₹1,900",
+    balance: `₹${(12450 - totalSpent).toLocaleString()}`,
+    pendingBalance: `₹${pendingAmount.toLocaleString()}`,
     energyCredits: "850 kWh",
-    escrowBalance: "₹3,200",
+    escrowBalance: `₹${Math.round(pendingAmount * 0.5).toLocaleString()}`,
     walletAddress: "0x7f9e8d...3a4b5c6d",
   };
+
+  const balanceHistory = [
+    { date: "Mon", balance: 8500 },
+    { date: "Tue", balance: 9200 },
+    { date: "Wed", balance: 8800 },
+    { date: "Thu", balance: 10500 },
+    { date: "Fri", balance: 12300 },
+    { date: "Sat", balance: 11800 },
+    { date: "Sun", balance: 12450 - totalSpent },
+  ];
 
   const handleCopy = () => {
     setCopied(true);
@@ -131,6 +110,9 @@ const WalletPage = () => {
         return <CreditCard className="w-4 h-4" />;
     }
   };
+
+  if (isLoading) return <AppLayout><PageTransition><LoadingSpinner message="Loading wallet..." /></PageTransition></AppLayout>;
+  if (error) return <AppLayout><PageTransition><ErrorCard message={error.message} onRetry={refetch} /></PageTransition></AppLayout>;
 
   return (
     <AppLayout>
@@ -412,7 +394,7 @@ const WalletPage = () => {
                     </TabsList>
 
                     <TabsContent value="all" className="space-y-2">
-                      {mockTransactions.map((txn, i) => (
+                      {transactions.map((txn, i) => (
                         <motion.div
                           key={txn.id}
                           initial={{ opacity: 0, x: -10 }}
@@ -446,7 +428,7 @@ const WalletPage = () => {
                     </TabsContent>
 
                     <TabsContent value="credits" className="space-y-2">
-                      {mockTransactions.filter(t => t.type === "credit").map((txn, i) => (
+                      {transactions.filter(t => t.type === "credit").map((txn, i) => (
                         <motion.div
                           key={txn.id}
                           initial={{ opacity: 0, x: -10 }}
@@ -469,7 +451,7 @@ const WalletPage = () => {
                     </TabsContent>
 
                     <TabsContent value="debits" className="space-y-2">
-                      {mockTransactions.filter(t => t.type === "debit").map((txn, i) => (
+                      {transactions.filter(t => t.type === "debit").map((txn, i) => (
                         <motion.div
                           key={txn.id}
                           initial={{ opacity: 0, x: -10 }}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { PageTransition } from "@/components/ui/PageTransition";
+import { LoadingSpinner, ErrorCard, EmptyState } from "@/components/ui/ApiStates";
+import { useContracts } from "@/hooks/useContracts";
 
 interface Trade {
   id: string;
@@ -29,93 +31,36 @@ interface Trade {
   txHash: string;
 }
 
-const mockTrades: Trade[] = [
-  {
-    id: "TRD-001",
-    type: "buy",
-    energyType: "solar",
-    counterparty: "SunPower Industries",
-    volume: "250 kWh",
-    pricePerUnit: "₹4.50",
-    totalValue: "₹1,125",
-    timestamp: "Today, 10:45 AM",
-    status: "completed",
-    txHash: "0x7f9e8d...3a4b",
-  },
-  {
-    id: "TRD-002",
-    type: "sell",
-    energyType: "solar",
-    counterparty: "GreenTech Corp",
-    volume: "180 kWh",
-    pricePerUnit: "₹4.80",
-    totalValue: "₹864",
-    timestamp: "Today, 09:30 AM",
-    status: "completed",
-    txHash: "0x3c2d1e...9f8a",
-  },
-  {
-    id: "TRD-003",
-    type: "buy",
-    energyType: "wind",
-    counterparty: "WindTech Solutions",
-    volume: "500 kWh",
-    pricePerUnit: "₹3.80",
-    totalValue: "₹1,900",
-    timestamp: "Yesterday, 04:15 PM",
-    status: "completed",
-    txHash: "0x5b6a7c...2d1e",
-  },
-  {
-    id: "TRD-004",
-    type: "buy",
-    energyType: "hydro",
-    counterparty: "AquaPower Ltd",
-    volume: "320 kWh",
-    pricePerUnit: "₹4.00",
-    totalValue: "₹1,280",
-    timestamp: "Yesterday, 11:20 AM",
-    status: "pending",
-    txHash: "0x9d8e7f...1a2b",
-  },
-  {
-    id: "TRD-005",
-    type: "sell",
-    energyType: "biogas",
-    counterparty: "EcoEnergy Hub",
-    volume: "150 kWh",
-    pricePerUnit: "₹5.20",
-    totalValue: "₹780",
-    timestamp: "2 days ago",
-    status: "completed",
-    txHash: "0x4c3b2a...8d7e",
-  },
-  {
-    id: "TRD-006",
-    type: "buy",
-    energyType: "solar",
-    counterparty: "RoofSolar Co",
-    volume: "400 kWh",
-    pricePerUnit: "₹4.60",
-    totalValue: "₹1,840",
-    timestamp: "3 days ago",
-    status: "failed",
-    txHash: "0x1a2b3c...6f5e",
-  },
-];
-
-const volumeChartData = [
-  { date: "Jan", bought: 2400, sold: 1800 },
-  { date: "Feb", bought: 3200, sold: 2100 },
-  { date: "Mar", bought: 2800, sold: 2400 },
-  { date: "Apr", bought: 3600, sold: 2800 },
-  { date: "May", bought: 4200, sold: 3200 },
-  { date: "Jun", bought: 3800, sold: 3600 },
-];
-
 const TradingHistory = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "buy" | "sell">("all");
+
+  const { data: contractsRes, isLoading, error, refetch } = useContracts({ limit: 100 });
+
+  const trades: Trade[] = useMemo(() => {
+    if (!contractsRes?.items) return [];
+    return contractsRes.items.map((c) => ({
+      id: c.id.slice(0, 8).toUpperCase(),
+      type: (c.buyer_id === c.id ? "sell" : "buy") as "buy" | "sell",
+      energyType: "solar" as Trade["energyType"],
+      counterparty: c.producer_id?.slice(0, 12) || "Unknown",
+      volume: `${c.volume_kwh} kWh`,
+      pricePerUnit: `₹${c.price_per_kwh.toFixed(2)}`,
+      totalValue: `₹${c.total_amount.toLocaleString()}`,
+      timestamp: new Date(c.created_at).toLocaleString(),
+      status: (c.status === "settled" ? "completed" : c.status === "active" ? "pending" : "completed") as Trade["status"],
+      txHash: `0x${c.id.slice(0, 8)}...${c.id.slice(-4)}`,
+    }));
+  }, [contractsRes]);
+
+  const volumeChartData = useMemo(() => {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+    return months.map((m) => ({
+      date: m,
+      bought: trades.filter(t => t.type === "buy").reduce((s, t) => s + parseFloat(t.volume), 0) / 6,
+      sold: trades.filter(t => t.type === "sell").reduce((s, t) => s + parseFloat(t.volume), 0) / 6,
+    }));
+  }, [trades]);
 
   const getEnergyIcon = (type: Trade["energyType"]) => {
     switch (type) {
@@ -145,7 +90,7 @@ const TradingHistory = () => {
     }
   };
 
-  const filteredTrades = mockTrades.filter((trade) => {
+  const filteredTrades = trades.filter((trade) => {
     const matchesSearch =
       trade.counterparty.toLowerCase().includes(searchQuery.toLowerCase()) ||
       trade.id.toLowerCase().includes(searchQuery.toLowerCase());
@@ -154,11 +99,14 @@ const TradingHistory = () => {
   });
 
   const stats = {
-    totalTrades: mockTrades.length,
-    totalBought: "₹6,145",
-    totalSold: "₹1,644",
-    volumeTraded: "1,800 kWh",
+    totalTrades: trades.length,
+    totalBought: `₹${trades.filter(t => t.type === "buy").reduce((s, t) => s + parseFloat(t.totalValue.replace(/[₹,]/g, "")), 0).toLocaleString()}`,
+    totalSold: `₹${trades.filter(t => t.type === "sell").reduce((s, t) => s + parseFloat(t.totalValue.replace(/[₹,]/g, "")), 0).toLocaleString()}`,
+    volumeTraded: `${trades.reduce((s, t) => s + parseFloat(t.volume), 0).toLocaleString()} kWh`,
   };
+
+  if (isLoading) return <AppLayout><PageTransition><LoadingSpinner message="Loading trading history..." /></PageTransition></AppLayout>;
+  if (error) return <AppLayout><PageTransition><ErrorCard message={error.message} onRetry={refetch} /></PageTransition></AppLayout>;
 
   return (
     <AppLayout>
@@ -434,7 +382,7 @@ const TradingHistory = () => {
                   {/* Pagination */}
                   <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
                     <p className="text-sm text-muted-foreground">
-                      Showing {filteredTrades.length} of {mockTrades.length} trades
+                      Showing {filteredTrades.length} of {trades.length} trades
                     </p>
                     <div className="flex items-center gap-2">
                       <Button variant="outline" size="sm" disabled>

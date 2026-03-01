@@ -1,3 +1,6 @@
+// TODO: Backend integration pending — No /api/v1/community endpoint exists yet.
+// This page uses hardcoded mockMembers, mockPosts, and mockChallenges.
+// When a community API is created, replace mock data with service calls.
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { AppLayout } from "@/components/layout/AppLayout";

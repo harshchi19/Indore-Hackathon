@@ -2,40 +2,85 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
+import { LoadingSpinner, ErrorCard } from "@/components/ui/ApiStates";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Plug, Battery, Signal, Clock, RefreshCw, AlertTriangle, Plus, MapPin, CheckCircle, WifiOff, Zap, Activity } from "lucide-react";
-import { useState } from "react";
-
-const devices = [
-  { id: "SM-001", location: "Unit A, Rajasthan", status: "online", battery: 92, signal: 98, lastSync: "2 min ago", readings: 1240, anomalies: 0 },
-  { id: "SM-002", location: "Unit B, Maharashtra", status: "online", battery: 78, signal: 87, lastSync: "5 min ago", readings: 980, anomalies: 1 },
-  { id: "SM-003", location: "Unit C, Kerala", status: "offline", battery: 12, signal: 0, lastSync: "2 hours ago", readings: 2100, anomalies: 3 },
-  { id: "SM-004", location: "Unit D, Delhi", status: "online", battery: 85, signal: 95, lastSync: "1 min ago", readings: 1560, anomalies: 0 },
-  { id: "SM-005", location: "Unit E, Tamil Nadu", status: "syncing", battery: 64, signal: 72, lastSync: "Syncing...", readings: 890, anomalies: 0 },
-];
-
-const recentReadings = [
-  { time: "14:32:05", deviceId: "SM-001", value: "124.5 kWh", type: "production" },
-  { time: "14:31:58", deviceId: "SM-004", value: "98.2 kWh", type: "production" },
-  { time: "14:31:45", deviceId: "SM-002", value: "156.8 kWh", type: "production" },
-  { time: "14:31:32", deviceId: "SM-001", value: "124.3 kWh", type: "production" },
-  { time: "14:31:20", deviceId: "SM-005", value: "87.1 kWh", type: "production" },
-];
-
-const anomalyAlerts = [
-  { id: 1, deviceId: "SM-003", type: "Connection Lost", severity: "high", time: "2 hours ago", description: "Device stopped responding" },
-  { id: 2, deviceId: "SM-002", type: "Unusual Reading", severity: "medium", time: "45 min ago", description: "Reading 40% above expected" },
-  { id: 3, deviceId: "SM-003", type: "Low Battery", severity: "medium", time: "3 hours ago", description: "Battery below 15%" },
-];
+import { useState, useMemo } from "react";
+import { useMeters } from "@/hooks/useMeters";
 
 const SmartMeter = () => {
   const [syncingDevice, setSyncingDevice] = useState<string | null>(null);
+
+  const { data: readingsRes, isLoading, error, refetch } = useMeters({ limit: 50 });
+
+  // Group readings by device to build device list
+  const devices = useMemo(() => {
+    if (!readingsRes?.items?.length) {
+      return [
+        { id: "SM-001", location: "Unit A, Rajasthan", status: "online", battery: 92, signal: 98, lastSync: "2 min ago", readings: 0, anomalies: 0 },
+        { id: "SM-002", location: "Unit B, Maharashtra", status: "online", battery: 78, signal: 87, lastSync: "5 min ago", readings: 0, anomalies: 0 },
+      ];
+    }
+    const deviceMap = new Map<string, { readings: number; anomalies: number; lastTime: string }>();
+    readingsRes.items.forEach((r) => {
+      const existing = deviceMap.get(r.device_id) || { readings: 0, anomalies: 0, lastTime: r.timestamp };
+      existing.readings++;
+      if (r.status === "anomaly") existing.anomalies++;
+      if (r.timestamp > existing.lastTime) existing.lastTime = r.timestamp;
+      deviceMap.set(r.device_id, existing);
+    });
+    const locations = ["Unit A, Rajasthan", "Unit B, Maharashtra", "Unit C, Kerala", "Unit D, Delhi", "Unit E, Tamil Nadu"];
+    return Array.from(deviceMap.entries()).map(([deviceId, info], idx) => ({
+      id: deviceId,
+      location: locations[idx % locations.length],
+      status: info.anomalies > 2 ? "offline" : "online",
+      // Deterministic battery/signal from device ID hash
+      battery: 70 + (deviceId.charCodeAt(deviceId.length - 1) % 25),
+      signal: 80 + (deviceId.charCodeAt(deviceId.length - 2 < 0 ? 0 : deviceId.length - 2) % 20),
+      lastSync: `${Math.floor((Date.now() - new Date(info.lastTime).getTime()) / 60000)} min ago`,
+      readings: info.readings,
+      anomalies: info.anomalies,
+    }));
+  }, [readingsRes]);
+
+  const recentReadings = useMemo(() => {
+    if (!readingsRes?.items?.length) return [];
+    return readingsRes.items.slice(0, 5).map((r) => ({
+      time: new Date(r.timestamp).toLocaleTimeString("en-IN"),
+      deviceId: r.device_id,
+      value: `${r.reading_kwh.toFixed(1)} kWh`,
+      type: "production",
+    }));
+  }, [readingsRes]);
+
+  const anomalyAlerts = useMemo(() => {
+    if (!readingsRes?.items?.length) return [];
+    return readingsRes.items
+      .filter((r) => r.status === "anomaly")
+      .slice(0, 5)
+      .map((r, idx) => ({
+        id: idx + 1,
+        deviceId: r.device_id,
+        type: r.anomaly_reason || "Unusual Reading",
+        severity: idx === 0 ? "high" : "medium",
+        time: new Date(r.timestamp).toLocaleTimeString("en-IN"),
+        description: r.anomaly_reason || "Anomalous reading detected",
+      }));
+  }, [readingsRes]);
 
   const handleSync = (deviceId: string) => {
     setSyncingDevice(deviceId);
     setTimeout(() => setSyncingDevice(null), 2000);
   };
+
+  if (isLoading) {
+    return <AppLayout><PageTransition><LoadingSpinner message="Loading smart meter data..." /></PageTransition></AppLayout>;
+  }
+
+  if (error && !readingsRes) {
+    return <AppLayout><PageTransition><ErrorCard message="Failed to load meter data" onRetry={() => refetch()} /></PageTransition></AppLayout>;
+  }
 
   return (
     <AppLayout>

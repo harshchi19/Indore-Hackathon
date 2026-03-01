@@ -2,11 +2,14 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
+import { LoadingSpinner, ErrorCard } from "@/components/ui/ApiStates";
 import { motion } from "framer-motion";
 import { Zap, TrendingUp, Brain, ArrowUpRight, Clock, IndianRupee, Sparkles } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { useMemo } from "react";
+import { useAnalytics, useMonthlyAnalytics } from "@/hooks/useAnalytics";
 
-const demandVsSupply = [
+const defaultDemandVsSupply = [
   { hour: "6AM", demand: 120, supply: 180 },
   { hour: "8AM", demand: 280, supply: 200 },
   { hour: "10AM", demand: 350, supply: 420 },
@@ -17,25 +20,47 @@ const demandVsSupply = [
   { hour: "8PM", demand: 440, supply: 180 },
 ];
 
-const sellingHours = [
-  { hour: "6AM", revenue: 120 },
-  { hour: "8AM", revenue: 280 },
-  { hour: "10AM", revenue: 520 },
-  { hour: "12PM", revenue: 680 },
-  { hour: "2PM", revenue: 590 },
-  { hour: "4PM", revenue: 420 },
-  { hour: "6PM", revenue: 350 },
-  { hour: "8PM", revenue: 180 },
-];
-
-const producerStats = [
-  { label: "Energy Listed", value: "1,240", unit: "kWh", change: "+8.3%", icon: Zap, gradient: "from-primary/20 to-primary/5" },
-  { label: "Revenue Today", value: "₹7,820", unit: "", change: "+14.2%", icon: IndianRupee, gradient: "from-saffron/20 to-saffron/5" },
-  { label: "Demand Trend", value: "↑ Rising", unit: "", change: "+22%", icon: TrendingUp, gradient: "from-accent/20 to-accent/5" },
-  { label: "AI Price Tip", value: "₹6.80", unit: "/kWh", change: "Optimal", icon: Brain, gradient: "from-primary/20 to-accent/5" },
-];
-
 const ProducerDashboard = () => {
+  const { data: dashboard, isLoading, error, refetch } = useAnalytics();
+
+  const { data: monthly } = useMonthlyAnalytics({ year: new Date().getFullYear() });
+
+  const revenueToday = useMemo(() => {
+    if (!dashboard) return 0;
+    return Math.round(dashboard.total_energy_kwh * 6.3);
+  }, [dashboard]);
+
+  const demandVsSupply = useMemo(() => {
+    if (!monthly?.length) return defaultDemandVsSupply;
+    return monthly.slice(0, 8).map((m, i) => {
+      const hours = ["6AM", "8AM", "10AM", "12PM", "2PM", "4PM", "6PM", "8PM"];
+      return {
+        hour: hours[i] || `${i}`,
+        demand: Math.round(m.total_kwh * 0.8),
+        supply: Math.round(m.total_kwh),
+      };
+    });
+  }, [monthly]);
+
+  const sellingHours = useMemo(() => {
+    const hours = ["6AM", "8AM", "10AM", "12PM", "2PM", "4PM", "6PM", "8PM"];
+    const base = revenueToday / 8;
+    return hours.map((h, i) => ({
+      hour: h,
+      revenue: Math.round(base * [0.15, 0.35, 0.65, 0.85, 0.74, 0.53, 0.44, 0.23][i]),
+    }));
+  }, [revenueToday]);
+
+  const producerStats = [
+    { label: "Energy Listed", value: dashboard ? `${dashboard.total_energy_kwh.toLocaleString()}` : "0", unit: "kWh", change: "+8.3%", icon: Zap, gradient: "from-primary/20 to-primary/5" },
+    { label: "Revenue Today", value: `₹${revenueToday.toLocaleString()}`, unit: "", change: "+14.2%", icon: IndianRupee, gradient: "from-saffron/20 to-saffron/5" },
+    { label: "Demand Trend", value: "↑ Rising", unit: "", change: "+22%", icon: TrendingUp, gradient: "from-accent/20 to-accent/5" },
+    { label: "AI Price Tip", value: `₹${(dashboard ? (revenueToday / Math.max(dashboard.total_energy_kwh, 1)).toFixed(2) : "6.80")}`, unit: "/kWh", change: "Optimal", icon: Brain, gradient: "from-primary/20 to-accent/5" },
+  ];
+
+  if (isLoading) return <AppLayout><PageTransition><LoadingSpinner message="Loading producer dashboard..." /></PageTransition></AppLayout>;
+  if (error) return <AppLayout><PageTransition><ErrorCard message={error.message} onRetry={refetch} /></PageTransition></AppLayout>;
+
   return (
     <AppLayout>
       <PageTransition>
@@ -71,7 +96,7 @@ const ProducerDashboard = () => {
                 <div className="flex items-center gap-6">
                   <div className="text-center">
                     <p className="text-3xl font-heading font-bold text-white">
-                      <AnimatedCounter end={7820} prefix="₹" />
+                      <AnimatedCounter end={revenueToday} prefix="₹" />
                     </p>
                     <p className="text-[11px] text-white/60 mt-1">Revenue Today</p>
                   </div>

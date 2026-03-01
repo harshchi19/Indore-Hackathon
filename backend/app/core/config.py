@@ -12,8 +12,10 @@ from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
-# Resolve .env relative to this file so it always works regardless of CWD
+# Resolve .env relative to this file – file may not exist in production
+# (Render / Docker inject env vars directly).
 _ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
+_ENV_FILE_PATH = str(_ENV_FILE) if _ENV_FILE.is_file() else None
 
 
 class Settings(BaseSettings):
@@ -22,7 +24,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=str(_ENV_FILE),
+        env_file=_ENV_FILE_PATH or "",
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -33,10 +35,18 @@ class Settings(BaseSettings):
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
     ENVIRONMENT: str = Field(default="development", pattern="^(development|staging|production)$")
+    LOG_LEVEL: str = "INFO"
+
+    # ── Server (Render injects PORT) ──────────────────────
+    PORT: int = 8000
 
     # ── API ───────────────────────────────────────────────
     API_V1_PREFIX: str = "/api/v1"
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
+    ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:8080",
+    ]
 
     # ── MongoDB ───────────────────────────────────────────
     MONGODB_URI: str = "mongodb://localhost:27017"

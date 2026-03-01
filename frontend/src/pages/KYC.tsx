@@ -1,3 +1,6 @@
+// TODO: Backend integration pending — No /api/v1/kyc endpoint exists yet.
+// This page uses hardcoded verificationSteps, documents, and reviewerMessages.
+// When a KYC/verification API is created, replace with service calls.
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
@@ -6,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ShieldCheck, Upload, CheckCircle, Clock, AlertCircle, FileText, User, Building, MapPin, RefreshCw, MessageSquare } from "lucide-react";
 import { useState } from "react";
 
+/* TODO: Replace with API data when backend KYC endpoint is available */
 const verificationSteps = [
   { id: 1, title: "Personal Information", description: "Basic identity details", status: "completed" },
   { id: 2, title: "Identity Document", description: "Government-issued ID", status: "completed" },

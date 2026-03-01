@@ -1,0 +1,205 @@
+[
+  {
+    "_id": "69a34e3cc39812dd880eb784",
+    "contract_id": "69a34e3cc39812dd880eb734",
+    "raised_by": "69a34e3cc39812dd880eb6cc",
+    "status": "open",
+    "description": "Energy delivery was 40% below contracted volume. Smart meter readings confirm deficit.",
+    "resolution_note": null,
+    "evidence": [
+      {
+        "file_url": "https://storage.verdant.io/evidence/dispute-69a34e3c.pdf",
+        "description": "Smart meter log export for the disputed period.",
+        "uploaded_at": "2026-02-14T20:21:16.245232+00:00"
+      }
+    ],
+    "audit_log": [
+      {
+        "timestamp": "2026-02-12T20:21:16.245237+00:00",
+        "actor": "69a34e3cc39812dd880eb6cc",
+        "action": "Dispute raised"
+      }
+    ],
+    "created_at": "2026-02-12T20:21:16.245246+00:00",
+    "updated_at": "2026-02-14T20:21:16.245250+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb785",
+    "contract_id": "69a34e3cc39812dd880eb735",
+    "raised_by": "69a34e3cc39812dd880eb6d4",
+    "status": "reviewing",
+    "description": "Payment was deducted but no energy credit received after 72 hours.",
+    "resolution_note": null,
+    "evidence": [],
+    "audit_log": [
+      {
+        "timestamp": "2026-02-10T20:21:16.245257+00:00",
+        "actor": "69a34e3cc39812dd880eb6d4",
+        "action": "Dispute raised"
+      },
+      {
+        "timestamp": "2026-02-13T20:21:16.245262+00:00",
+        "actor": "69a34e3cc39812dd880eb6b5",
+        "action": "Assigned for review"
+      }
+    ],
+    "created_at": "2026-02-10T20:21:16.245267+00:00",
+    "updated_at": "2026-02-12T20:21:16.245270+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb786",
+    "contract_id": "69a34e3cc39812dd880eb736",
+    "raised_by": "69a34e3cc39812dd880eb6d1",
+    "status": "resolved",
+    "description": "Certificate hash mismatch \u2014 possible tampering detected during verification.",
+    "resolution_note": "Refund issued and producer warned.",
+    "evidence": [
+      {
+        "file_url": "https://storage.verdant.io/evidence/dispute-69a34e3c.pdf",
+        "description": "Smart meter log export for the disputed period.",
+        "uploaded_at": "2026-02-01T20:21:16.245277+00:00"
+      }
+    ],
+    "audit_log": [
+      {
+        "timestamp": "2026-01-30T20:21:16.245280+00:00",
+        "actor": "69a34e3cc39812dd880eb6d1",
+        "action": "Dispute raised"
+      },
+      {
+        "timestamp": "2026-02-02T20:21:16.245285+00:00",
+        "actor": "69a34e3cc39812dd880eb6b5",
+        "action": "Assigned for review"
+      },
+      {
+        "timestamp": "2026-02-04T20:21:16.245289+00:00",
+        "actor": "69a34e3cc39812dd880eb6b5",
+        "action": "Dispute resolved"
+      }
+    ],
+    "created_at": "2026-01-30T20:21:16.245293+00:00",
+    "updated_at": "2026-02-01T20:21:16.245297+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb787",
+    "contract_id": "69a34e3cc39812dd880eb737",
+    "raised_by": "69a34e3cc39812dd880eb6ca",
+    "status": "open",
+    "description": "Producer failed to deliver scheduled energy on 3 consecutive days.",
+    "resolution_note": null,
+    "evidence": [],
+    "audit_log": [
+      {
+        "timestamp": "2026-02-23T20:21:16.245302+00:00",
+        "actor": "69a34e3cc39812dd880eb6ca",
+        "action": "Dispute raised"
+      }
+    ],
+    "created_at": "2026-02-23T20:21:16.245307+00:00",
+    "updated_at": "2026-02-25T20:21:16.245311+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb788",
+    "contract_id": "69a34e3cc39812dd880eb738",
+    "raised_by": "69a34e3cc39812dd880eb6c6",
+    "status": "reviewing",
+    "description": "Pricing discrepancy: was charged \u20b98.2/kWh instead of agreed \u20b95.5/kWh.",
+    "resolution_note": null,
+    "evidence": [
+      {
+        "file_url": "https://storage.verdant.io/evidence/dispute-69a34e3c.pdf",
+        "description": "Smart meter log export for the disputed period.",
+        "uploaded_at": "2026-01-15T20:21:16.245317+00:00"
+      }
+    ],
+    "audit_log": [
+      {
+        "timestamp": "2026-01-13T20:21:16.245320+00:00",
+        "actor": "69a34e3cc39812dd880eb6c6",
+        "action": "Dispute raised"
+      },
+      {
+        "timestamp": "2026-01-16T20:21:16.245324+00:00",
+        "actor": "69a34e3cc39812dd880eb6b5",
+        "action": "Assigned for review"
+      }
+    ],
+    "created_at": "2026-01-13T20:21:16.245328+00:00",
+    "updated_at": "2026-01-15T20:21:16.245331+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb789",
+    "contract_id": "69a34e3cc39812dd880eb710",
+    "raised_by": "69a34e3cc39812dd880eb6cb",
+    "status": "resolved",
+    "description": "Smart meter shows anomalous readings during the delivery window.",
+    "resolution_note": "Refund issued and producer warned.",
+    "evidence": [],
+    "audit_log": [
+      {
+        "timestamp": "2026-02-12T20:21:16.245338+00:00",
+        "actor": "69a34e3cc39812dd880eb6cb",
+        "action": "Dispute raised"
+      },
+      {
+        "timestamp": "2026-02-15T20:21:16.245342+00:00",
+        "actor": "69a34e3cc39812dd880eb6b5",
+        "action": "Assigned for review"
+      },
+      {
+        "timestamp": "2026-02-17T20:21:16.245346+00:00",
+        "actor": "69a34e3cc39812dd880eb6b5",
+        "action": "Dispute resolved"
+      }
+    ],
+    "created_at": "2026-02-12T20:21:16.245349+00:00",
+    "updated_at": "2026-02-14T20:21:16.245353+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb78a",
+    "contract_id": "69a34e3cc39812dd880eb70f",
+    "raised_by": "69a34e3cc39812dd880eb6c5",
+    "status": "open",
+    "description": "Duplicate charge for the same contract \u2014 need refund for second payment.",
+    "resolution_note": null,
+    "evidence": [
+      {
+        "file_url": "https://storage.verdant.io/evidence/dispute-69a34e3c.pdf",
+        "description": "Smart meter log export for the disputed period.",
+        "uploaded_at": "2026-02-08T20:21:16.245359+00:00"
+      }
+    ],
+    "audit_log": [
+      {
+        "timestamp": "2026-02-06T20:21:16.245366+00:00",
+        "actor": "69a34e3cc39812dd880eb6c5",
+        "action": "Dispute raised"
+      }
+    ],
+    "created_at": "2026-02-06T20:21:16.245370+00:00",
+    "updated_at": "2026-02-08T20:21:16.245374+00:00"
+  },
+  {
+    "_id": "69a34e3cc39812dd880eb78b",
+    "contract_id": "69a34e3cc39812dd880eb711",
+    "raised_by": "69a34e3cc39812dd880eb6c2",
+    "status": "reviewing",
+    "description": "Energy source mismatch: contract specifies solar but meter data suggests grid power.",
+    "resolution_note": null,
+    "evidence": [],
+    "audit_log": [
+      {
+        "timestamp": "2026-01-01T20:21:16.245379+00:00",
+        "actor": "69a34e3cc39812dd880eb6c2",
+        "action": "Dispute raised"
+      },
+      {
+        "timestamp": "2026-01-04T20:21:16.245384+00:00",
+        "actor": "69a34e3cc39812dd880eb6b5",
+        "action": "Assigned for review"
+      }
+    ],
+    "created_at": "2026-01-01T20:21:16.245388+00:00",
+    "updated_at": "2026-01-03T20:21:16.245391+00:00"
+  }
+]
