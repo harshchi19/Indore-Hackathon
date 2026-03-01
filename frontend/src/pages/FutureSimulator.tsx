@@ -8,19 +8,13 @@ import { motion } from "framer-motion";
 import { Sparkles, TrendingUp, Leaf, Zap, Calendar } from "lucide-react";
 import { useState, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { usePricingStream } from "@/hooks/usePricingStream";
 
 const FutureSimulator = () => {
   const [usage, setUsage] = useState(500);
   const [adoption, setAdoption] = useState(40);
   const [investment, setInvestment] = useState(50000);
 
-  // Use real-time pricing when available for more accurate cost projections
-  const { prices } = usePricingStream();
-  const avgPrice = useMemo(() => {
-    if (prices.length === 0) return 6.5; // fallback
-    return prices.reduce((s, p) => s + p.price_per_kwh, 0) / prices.length;
-  }, [prices]);
+  const avgPrice = 6.5;
 
   const projections = useMemo(() => {
     const base = { carbon: usage * 0.5 * (adoption / 100), money: usage * avgPrice * (adoption / 100) * 0.18, renewable: adoption, independence: Math.min(95, adoption * 1.2 + investment / 10000) };

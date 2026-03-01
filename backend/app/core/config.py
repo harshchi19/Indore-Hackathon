@@ -96,6 +96,7 @@ class Settings(BaseSettings):
     GROQ_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
     SARVAM_API_KEY: Optional[str] = None
+    SARVAM_DEFAULT_SPEAKER: str = "Priya"
 
     # ── Neo4j (Graph Database) ────────────────────────────
     NEO4J_URI: str = "neo4j://localhost:7687"
@@ -103,7 +104,7 @@ class Settings(BaseSettings):
     NEO4J_PASSWORD: str = "password"
     NEO4J_DATABASE: str = "neo4j"
     # Set to True only when a real Neo4j instance is configured
-    ENABLE_NEO4J: bool = False
+    ENABLE_NEO4J: bool = True
 
 
 @lru_cache()

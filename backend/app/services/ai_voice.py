@@ -202,7 +202,11 @@ class AIVoiceService:
     
     def __init__(self):
         self.client = SarvamClient(settings.SARVAM_API_KEY) if settings.SARVAM_API_KEY else None
-        self.default_speaker = VoicePersona(settings.SARVAM_DEFAULT_SPEAKER)
+        # Use configured speaker with safe fallback to Priya
+        try:
+            self.default_speaker = VoicePersona(settings.SARVAM_DEFAULT_SPEAKER)
+        except (AttributeError, ValueError):
+            self.default_speaker = VoicePersona.PRIYA
         self.default_language = IndianLanguage.HINDI
     
     @property

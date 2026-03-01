@@ -4,7 +4,7 @@ import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 import { LoadingSpinner, ErrorCard } from "@/components/ui/ApiStates";
 import { motion } from "framer-motion";
-import { Zap, Leaf, ShoppingCart, TrendingUp, Brain, ArrowUpRight, ArrowDownRight, Sun, Wind, Battery, Droplets, Sparkles, Activity } from "lucide-react";
+import { Zap, Leaf, ShoppingCart, TrendingUp, Brain, ArrowUpRight, ArrowDownRight, Sun, Wind, Battery, Droplets, Sparkles, Activity, Network, Crown, Users, GitBranch, CircleDot } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useListings } from "@/hooks/useListings";
@@ -333,6 +333,290 @@ const Dashboard = () => {
                 </div>
               </motion.div>
             </div>
+
+            {/* ═══ Neo4j Graph Intelligence Section ═══ */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.65 }}
+              className="relative overflow-hidden rounded-2xl p-6 lg:p-8"
+            >
+              <div className="absolute inset-0" style={{
+                background: "linear-gradient(135deg, hsl(142 72% 12% / 0.95), hsl(220 50% 10% / 0.95), hsl(142 60% 8% / 0.9))"
+              }} />
+              <div className="absolute inset-0 grain opacity-20" />
+
+              {/* Animated network lines background */}
+              <svg className="absolute inset-0 w-full h-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="lineGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="hsl(142 72% 50%)" stopOpacity="0" />
+                    <stop offset="50%" stopColor="hsl(142 72% 50%)" stopOpacity="1" />
+                    <stop offset="100%" stopColor="hsl(142 72% 50%)" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                {[
+                  "M0,60 Q200,20 400,80 T800,40", "M0,120 Q250,180 500,100 T1000,160",
+                  "M0,200 Q300,140 600,220 T1200,180", "M100,0 Q150,100 200,200 T300,400",
+                  "M400,0 Q350,150 500,250 T600,400", "M700,0 Q750,80 680,200 T800,400",
+                ].map((d, i) => (
+                  <motion.path
+                    key={i} d={d} fill="none" stroke="url(#lineGrad1)" strokeWidth="1.5"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 1 }}
+                    transition={{ delay: 0.8 + i * 0.15, duration: 2, ease: "easeInOut" }}
+                  />
+                ))}
+                {[
+                  { cx: 200, cy: 60 }, { cx: 500, cy: 100 }, { cx: 350, cy: 180 },
+                  { cx: 700, cy: 40 }, { cx: 150, cy: 200 }, { cx: 600, cy: 220 },
+                  { cx: 400, cy: 80 }, { cx: 250, cy: 140 }, { cx: 680, cy: 160 },
+                ].map((p, i) => (
+                  <motion.circle
+                    key={`n${i}`} cx={p.cx} cy={p.cy} r="3" fill="hsl(142 72% 50%)"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: [0, 1.5, 1], opacity: [0, 0.8, 0.4] }}
+                    transition={{ delay: 1.2 + i * 0.1, duration: 1.5, repeat: Infinity, repeatDelay: 3 + i * 0.5 }}
+                  />
+                ))}
+              </svg>
+
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+                    <Network className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-bold text-white text-lg">Graph Intelligence</h3>
+                    <p className="text-xs text-white/50">Neo4j-powered network analytics &amp; relationships</p>
+                  </div>
+                  <div className="ml-auto flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+                    <CircleDot className="w-3 h-3 text-primary animate-pulse" />
+                    <span className="text-[10px] text-primary font-medium">Graph Active</span>
+                  </div>
+                </div>
+
+                {/* Graph Stats Row */}
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+                  {[
+                    { label: "Nodes", value: 1248, icon: Users, color: "text-primary" },
+                    { label: "Producers", value: 86, icon: Crown, color: "text-saffron" },
+                    { label: "Listings", value: 342, icon: ShoppingCart, color: "text-accent" },
+                    { label: "Contracts", value: 567, icon: GitBranch, color: "text-emerald-400" },
+                    { label: "Edges", value: 3891, icon: Network, color: "text-blue-400" },
+                  ].map((s, i) => (
+                    <motion.div
+                      key={s.label}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.7 + i * 0.06 }}
+                      className="bg-white/[0.03] backdrop-blur-sm rounded-xl p-4 border border-white/[0.06] hover:bg-white/[0.06] transition-all duration-300 hover:border-primary/20"
+                    >
+                      <s.icon className={`w-4 h-4 ${s.color} mb-2`} />
+                      <p className="text-xl font-heading font-bold text-white">
+                        <AnimatedCounter end={s.value} />
+                      </p>
+                      <p className="text-[10px] text-white/40 mt-0.5">{s.label}</p>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Graph Analytics Grid — 3 columns */}
+                <div className="grid lg:grid-cols-3 gap-4">
+
+                  {/* Interactive Network Visualization */}
+                  <div className="bg-white/[0.03] backdrop-blur-sm rounded-xl p-5 border border-white/[0.06] relative overflow-hidden">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Network className="w-4 h-4 text-primary" />
+                      <h4 className="font-heading font-semibold text-white text-sm">Live Network</h4>
+                    </div>
+                    {/* SVG Network Graph */}
+                    <div className="relative h-[200px]">
+                      <svg className="w-full h-full" viewBox="0 0 300 200">
+                        {/* Edges with animated gradients */}
+                        {[
+                          { x1: 150, y1: 100, x2: 60, y2: 40 }, { x1: 150, y1: 100, x2: 240, y2: 35 },
+                          { x1: 150, y1: 100, x2: 45, y2: 160 }, { x1: 150, y1: 100, x2: 255, y2: 165 },
+                          { x1: 150, y1: 100, x2: 90, y2: 100 }, { x1: 150, y1: 100, x2: 210, y2: 100 },
+                          { x1: 60, y1: 40, x2: 90, y2: 100 }, { x1: 240, y1: 35, x2: 210, y2: 100 },
+                          { x1: 45, y1: 160, x2: 90, y2: 100 }, { x1: 255, y1: 165, x2: 210, y2: 100 },
+                          { x1: 60, y1: 40, x2: 150, y2: 20 }, { x1: 240, y1: 35, x2: 150, y2: 20 },
+                        ].map((e, i) => (
+                          <motion.line
+                            key={`e${i}`} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
+                            stroke="hsl(142 72% 40%)" strokeWidth="1" strokeOpacity="0.25"
+                            initial={{ pathLength: 0 }}
+                            animate={{ pathLength: 1 }}
+                            transition={{ delay: 0.9 + i * 0.05, duration: 0.8 }}
+                          />
+                        ))}
+                        {/* Animated data pulses along edges */}
+                        {[
+                          { x1: 150, y1: 100, x2: 60, y2: 40 }, { x1: 150, y1: 100, x2: 240, y2: 35 },
+                          { x1: 150, y1: 100, x2: 45, y2: 160 }, { x1: 150, y1: 100, x2: 255, y2: 165 },
+                        ].map((e, i) => (
+                          <motion.circle
+                            key={`pulse${i}`} r="2.5" fill="hsl(142 72% 55%)" opacity="0.8"
+                            initial={{ cx: e.x1, cy: e.y1 }}
+                            animate={{ cx: [e.x1, e.x2, e.x1], cy: [e.y1, e.y2, e.y1] }}
+                            transition={{ delay: 1.5 + i * 0.4, duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                          />
+                        ))}
+                        {/* Nodes */}
+                        {[
+                          { cx: 150, cy: 100, r: 14, fill: "hsl(142 72% 35%)", label: "Hub", type: "hub" },
+                          { cx: 150, cy: 20, r: 8, fill: "hsl(142 50% 45%)", label: "Grid", type: "grid" },
+                          { cx: 60, cy: 40, r: 10, fill: "hsl(30 100% 55%)", label: "Solar", type: "producer" },
+                          { cx: 240, cy: 35, r: 10, fill: "hsl(217 91% 55%)", label: "Wind", type: "producer" },
+                          { cx: 45, cy: 160, r: 9, fill: "hsl(190 80% 50%)", label: "Hydro", type: "producer" },
+                          { cx: 255, cy: 165, r: 9, fill: "hsl(142 72% 45%)", label: "Bio", type: "producer" },
+                          { cx: 90, cy: 100, r: 7, fill: "hsl(260 60% 55%)", label: "C1", type: "consumer" },
+                          { cx: 210, cy: 100, r: 7, fill: "hsl(260 60% 55%)", label: "C2", type: "consumer" },
+                        ].map((n, i) => (
+                          <g key={`node${i}`}>
+                            <motion.circle
+                              cx={n.cx} cy={n.cy} r={n.r + 4} fill={n.fill} opacity="0.15"
+                              animate={{ r: [n.r + 2, n.r + 6, n.r + 2] }}
+                              transition={{ duration: 2 + i * 0.3, repeat: Infinity }}
+                            />
+                            <motion.circle
+                              cx={n.cx} cy={n.cy} r={n.r} fill={n.fill}
+                              stroke="rgba(255,255,255,0.3)" strokeWidth="1"
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ delay: 1 + i * 0.08, type: "spring" }}
+                            />
+                            <text x={n.cx} y={n.cy + 3} textAnchor="middle" fill="white" fontSize="7" fontWeight="600">{n.label}</text>
+                          </g>
+                        ))}
+                      </svg>
+                    </div>
+                    {/* Legend */}
+                    <div className="flex items-center justify-center gap-4 mt-2">
+                      {[
+                        { color: "bg-saffron", label: "Producers" },
+                        { color: "bg-[hsl(260,60%,55%)]", label: "Consumers" },
+                        { color: "bg-primary", label: "Hub" },
+                      ].map(l => (
+                        <span key={l.label} className="flex items-center gap-1.5 text-[9px] text-white/40">
+                          <span className={`w-2 h-2 rounded-full ${l.color}`} />
+                          {l.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Producer Rankings */}
+                  <div className="bg-white/[0.03] backdrop-blur-sm rounded-xl p-5 border border-white/[0.06]">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Crown className="w-4 h-4 text-saffron" />
+                      <h4 className="font-heading font-semibold text-white text-sm">Top Producers</h4>
+                      <span className="ml-auto text-[10px] text-white/40">by volume</span>
+                    </div>
+                    <div className="space-y-3">
+                      {[
+                        { name: "SolarGrid India", source: "solar", kwh: 12400, contracts: 34, score: 96 },
+                        { name: "WindForce Energy", source: "wind", kwh: 9800, contracts: 28, score: 91 },
+                        { name: "HydroFlow Power", source: "hydro", kwh: 7200, contracts: 22, score: 87 },
+                        { name: "BioGreen Corp", source: "biomass", kwh: 4600, contracts: 15, score: 78 },
+                        { name: "GeoPower Ltd", source: "geothermal", kwh: 3100, contracts: 11, score: 72 },
+                      ].map((p, i) => {
+                        const SourceIcon = sourceIconMap[p.source] || Battery;
+                        return (
+                          <motion.div
+                            key={p.name}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.8 + i * 0.08 }}
+                            className="flex items-center gap-3 group"
+                          >
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
+                              i === 0 ? "bg-saffron/20 text-saffron" :
+                              i === 1 ? "bg-gray-300/20 text-gray-300" :
+                              i === 2 ? "bg-amber-600/20 text-amber-500" :
+                              "bg-white/10 text-white/50"
+                            }`}>
+                              {i + 1}
+                            </div>
+                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                              <SourceIcon className="w-4 h-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-white font-medium truncate">{p.name}</p>
+                              <p className="text-[10px] text-white/40">{p.kwh.toLocaleString()} kWh · {p.contracts} contracts</p>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs font-bold text-primary">{p.score}</div>
+                              <div className="text-[9px] text-white/30">score</div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Energy Network Flow + Relationship Chart */}
+                  <div className="bg-white/[0.03] backdrop-blur-sm rounded-xl p-5 border border-white/[0.06]">
+                    <div className="flex items-center gap-2 mb-4">
+                      <GitBranch className="w-4 h-4 text-accent" />
+                      <h4 className="font-heading font-semibold text-white text-sm">Trade Flows</h4>
+                    </div>
+
+                    {/* Network Stats */}
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                      {[
+                        { label: "Total kWh", value: 24800, color: "text-primary" },
+                        { label: "Trade Routes", value: 47, color: "text-accent" },
+                        { label: "Transactions", value: 156, color: "text-saffron" },
+                        { label: "Avg Size", value: 159, color: "text-emerald-400" },
+                      ].map((s, i) => (
+                        <motion.div
+                          key={s.label}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.85 + i * 0.05 }}
+                          className="bg-white/[0.03] rounded-lg p-2.5"
+                        >
+                          <p className={`text-base font-heading font-bold ${s.color}`}>
+                            <AnimatedCounter end={s.value} />
+                          </p>
+                          <p className="text-[9px] text-white/40">{s.label}</p>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    {/* Source Distribution */}
+                    <p className="text-[10px] text-white/40 uppercase tracking-wider font-semibold mb-2">Source Distribution</p>
+                    <div className="space-y-2">
+                      {[
+                        { source: "Solar", kwh: 12400, color: "from-saffron to-saffron/70" },
+                        { source: "Wind", kwh: 8200, color: "from-accent to-accent/70" },
+                        { source: "Hydro", kwh: 5600, color: "from-primary to-primary/70" },
+                        { source: "Biomass", kwh: 2100, color: "from-emerald-600 to-emerald-500" },
+                      ].map((s, i) => {
+                        const pct = Math.round((s.kwh / 12400) * 100);
+                        return (
+                          <motion.div key={s.source} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 + i * 0.05 }}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-white/70">{s.source}</span>
+                              <span className="text-[10px] text-white/40">{s.kwh.toLocaleString()} kWh</span>
+                            </div>
+                            <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${pct}%` }}
+                                transition={{ delay: 1 + i * 0.1, duration: 0.8 }}
+                                className={`h-full rounded-full bg-gradient-to-r ${s.color}`}
+                              />
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
 
             {/* Bottom Row */}
             <div className="grid lg:grid-cols-2 gap-6">

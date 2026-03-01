@@ -51,7 +51,14 @@ async def create_listing(
     current_user: User,
 ) -> EnergyListingResponse:
     """Create a new energy listing. Caller must own the referenced producer."""
-    producer = await Producer.get(PydanticObjectId(payload.producer_id))
+    try:
+        producer_oid = PydanticObjectId(payload.producer_id)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid producer_id: must be a valid 24-character hex ObjectId",
+        )
+    producer = await Producer.get(producer_oid)
     if producer is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

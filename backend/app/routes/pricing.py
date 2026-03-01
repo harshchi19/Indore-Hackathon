@@ -1,15 +1,13 @@
 """
 Verdant Backend – Pricing routes (Part A)
-Spot price, historical data, and WebSocket price stream.
+Spot price and historical data.
 """
 
 from __future__ import annotations
 
-import asyncio
-import json
 from typing import List
 
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Query
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -54,33 +52,3 @@ async def historical_prices(
     interval_minutes: int = Query(default=15, ge=1, le=60),
 ) -> HistoricalPriceResponse:
     return pricing_service.get_historical_prices(source, hours, interval_minutes)
-
-
-# ── WebSocket price stream ──────────────────────────────────
-@router.websocket("/ws/stream")
-async def price_stream(websocket: WebSocket):
-    """
-    Real-time price feed over WebSocket.
-    Pushes spot prices for all sources at the configured interval.
-    """
-    await websocket.accept()
-    logger.info("WebSocket client connected: %s", websocket.client)
-    try:
-        while True:
-            prices = pricing_service.get_all_spot_prices()
-            payload = [
-                {
-                    "energy_source": p.energy_source.value,
-                    "price_per_kwh": p.price_per_kwh,
-                    "currency": p.currency,
-                    "timestamp": p.timestamp.isoformat(),
-                }
-                for p in prices
-            ]
-            await websocket.send_text(json.dumps(payload))
-            await asyncio.sleep(settings.PRICING_UPDATE_INTERVAL_SECONDS)
-    except WebSocketDisconnect:
-        logger.info("WebSocket client disconnected: %s", websocket.client)
-    except Exception as exc:
-        logger.error("WebSocket error: %s", exc)
-        await websocket.close(code=1011)

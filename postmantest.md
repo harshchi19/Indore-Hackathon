@@ -1115,6 +1115,375 @@ Follow these steps in order for a complete integration test:
 
 ---
 
+## 12. AI Services (`/api/v1/ai`)
+
+All AI endpoints are under the `/ai` prefix. **No auth required** for most (they use `user_id` in body).
+
+### 12.1 Health Check
+
+```
+GET {{base}}/ai/health
+```
+
+**Expected 200:**
+```json
+{
+  "status": "healthy",
+  "services": {
+    "assistant": { "groq": true, "gemini": true },
+    "analytics": { "gemini": true },
+    "voice": { "sarvam": true }
+  }
+}
+```
+
+---
+
+### 12.2 Chat with AI Assistant
+
+```
+POST {{base}}/ai/chat
+Content-Type: application/json
+
+{
+  "message": "What is the best time to buy solar energy?",
+  "user_id": "test-user-1",
+  "context": {},
+  "use_history": true
+}
+```
+
+**Expected 200:**
+```json
+{
+  "message": "Based on current market trends...",
+  "tokens_used": 245,
+  "model": "llama-3.3-70b-versatile",
+  "provider": "groq",
+  "suggestions": [
+    "Tell me about wind energy prices",
+    "How do RECs work?",
+    "What is net metering?"
+  ]
+}
+```
+
+---
+
+### 12.3 Clear Chat History
+
+```
+POST {{base}}/ai/chat/clear?user_id=test-user-1
+```
+
+**Expected 200:**
+```json
+{ "status": "cleared", "user_id": "test-user-1" }
+```
+
+---
+
+### 12.4 Get Energy Tip
+
+```
+GET {{base}}/ai/tip
+```
+
+**Expected 200:**
+```json
+{
+  "tip": "Switch off lights and fans when not in use. This can save up to ₹500/month."
+}
+```
+
+---
+
+### 12.5 Explain Energy Concept
+
+```
+POST {{base}}/ai/explain
+Content-Type: application/json
+
+{
+  "concept": "Renewable Energy Certificates"
+}
+```
+
+**Expected 200:**
+```json
+{
+  "concept": "Renewable Energy Certificates",
+  "explanation": "Renewable Energy Certificates (RECs) are tradable certificates..."
+}
+```
+
+---
+
+### 12.6 Analyze Consumption
+
+```
+POST {{base}}/ai/analytics/consumption
+Content-Type: application/json
+
+{
+  "readings": [
+    { "timestamp": "2025-01-15T06:00:00Z", "kwh": 2.5, "source": "grid" },
+    { "timestamp": "2025-01-15T12:00:00Z", "kwh": 1.8, "source": "solar" },
+    { "timestamp": "2025-01-15T18:00:00Z", "kwh": 4.2, "source": "grid" },
+    { "timestamp": "2025-01-16T06:00:00Z", "kwh": 2.3, "source": "grid" },
+    { "timestamp": "2025-01-16T12:00:00Z", "kwh": 1.5, "source": "solar" },
+    { "timestamp": "2025-01-16T18:00:00Z", "kwh": 5.1, "source": "grid" }
+  ],
+  "user_profile": {
+    "city": "Pune",
+    "household_size": 4,
+    "has_solar": true
+  }
+}
+```
+
+**Expected 200:**
+```json
+{
+  "total_kwh": 17.4,
+  "average_daily_kwh": 2.9,
+  "peak_hour": 18,
+  "peak_day": "Thursday",
+  "trend": "stable",
+  "anomalies": [],
+  "insights": [
+    {
+      "title": "Peak Usage Detected",
+      "description": "Your peak consumption is at 18:00 hours",
+      "impact": "efficiency",
+      "priority": 4,
+      "action": "Consider shifting non-essential usage to off-peak hours"
+    }
+  ],
+  "recommendations": [
+    "Shift high-power appliances away from 18:00 peak hours",
+    "Consider solar energy to offset daytime consumption",
+    "Install smart meters for real-time monitoring"
+  ]
+}
+```
+
+---
+
+### 12.7 Predict Price
+
+```
+POST {{base}}/ai/analytics/predict-price
+Content-Type: application/json
+
+{
+  "energy_type": "solar",
+  "current_price": 5.5,
+  "historical_prices": [5.2, 5.3, 5.1, 5.4, 5.5]
+}
+```
+
+**Expected 200:**
+```json
+{
+  "current_price": 5.5,
+  "predicted_price": 5.23,
+  "change_percent": -4.91,
+  "trend": "down",
+  "confidence": "medium",
+  "reasoning": "Solar generation peaks during midday, prices typically lower",
+  "best_time_to_buy": "10:00 AM - 4:00 PM"
+}
+```
+
+---
+
+### 12.8 Sustainability Score
+
+```
+POST {{base}}/ai/analytics/sustainability
+Content-Type: application/json
+
+{
+  "total_consumption_kwh": 1000,
+  "green_energy_kwh": 650,
+  "certificates_owned": 5
+}
+```
+
+**Expected 200:**
+```json
+{
+  "overall_score": 75,
+  "green_percentage": 65.0,
+  "carbon_saved_kg": 533.0,
+  "tree_equivalent": 25,
+  "ranking": "🌿 Green Leader",
+  "improvement_tips": [
+    "Switch to 100% green energy sources",
+    "Install rooftop solar panels",
+    "Purchase Renewable Energy Certificates (RECs)",
+    "Monitor and reduce peak hour consumption"
+  ]
+}
+```
+
+---
+
+### 12.9 AI Producer Recommendations
+
+```
+POST {{base}}/ai/analytics/recommendations
+Content-Type: application/json
+
+{
+  "user_preferences": {
+    "energy_type": "solar",
+    "max_price_per_kwh": 6.0,
+    "location": "Pune"
+  },
+  "available_producers": [
+    { "id": "p1", "energy_type": "solar", "price_per_kwh": 5.2, "reliability": 98 },
+    { "id": "p2", "energy_type": "wind", "price_per_kwh": 6.5, "reliability": 94 },
+    { "id": "p3", "energy_type": "solar", "price_per_kwh": 4.8, "reliability": 96 }
+  ],
+  "limit": 3
+}
+```
+
+**Expected 200:**
+```json
+{
+  "recommendations": [
+    {
+      "producer_id": "p3",
+      "match_score": 100,
+      "reasons": ["Matches solar preference", "Within budget"],
+      "potential_savings": "₹600/month"
+    }
+  ]
+}
+```
+
+---
+
+### 12.10 Text-to-Speech (TTS)
+
+```
+POST {{base}}/ai/voice/speak
+Content-Type: application/json
+
+{
+  "text": "हरित ऊर्जा से भारत को स्वच्छ बनाएं",
+  "language": "hi-IN",
+  "speaker": "Aditya"
+}
+```
+
+**Expected 200:**
+```json
+{
+  "audio_base64": "<base64-encoded-wav>",
+  "audio_format": "wav",
+  "duration_seconds": 3.2,
+  "language": "hi-IN",
+  "speaker": "Aditya"
+}
+```
+
+> **Note:** If Sarvam API key is not configured, returns **503** with `"Voice service unavailable"`.
+
+---
+
+### 12.11 Speak Notification
+
+```
+POST {{base}}/ai/voice/notification
+Content-Type: application/json
+
+{
+  "notification_type": "welcome",
+  "language": "hi-IN",
+  "params": {}
+}
+```
+
+**Expected 200:** Same shape as TTS response.
+
+Available `notification_type` values: `welcome`, `contract_created`, `payment_success`, `price_alert`, `certificate_earned`, `daily_summary`.
+
+---
+
+### 12.12 Get Supported Languages
+
+```
+GET {{base}}/ai/voice/languages
+```
+
+**Expected 200:**
+```json
+{
+  "languages": [
+    { "code": "hi-IN", "name": "Hindi" },
+    { "code": "en-IN", "name": "English" },
+    { "code": "mr-IN", "name": "Marathi" }
+  ]
+}
+```
+
+---
+
+### 12.13 Get Available Speakers
+
+```
+GET {{base}}/ai/voice/speakers
+```
+
+**Expected 200:**
+```json
+{
+  "speakers": [
+    { "name": "Aditya", "gender": "Male" },
+    { "name": "Priya", "gender": "Female" }
+  ]
+}
+```
+
+---
+
+### 12.14 Get Available AI Models
+
+```
+GET {{base}}/ai/models
+```
+
+**Expected 200:**
+```json
+{
+  "assistant": { "primary": "Groq (Llama 3.3 70B)", "fallback": "Google Gemini 1.5 Flash" },
+  "analytics": { "model": "Google Gemini 1.5 Flash" },
+  "voice": { "model": "Sarvam Bulbul v3", "languages": 11, "voices": 10 }
+}
+```
+
+---
+
+### AI Services – Quick Tips
+
+| Test | What to check |
+|------|---------------|
+| Health | All 3 sub-services show `true` when API keys configured |
+| Chat | Conversation history persists across calls with same `user_id` |
+| Clear | Subsequent chat starts fresh after clearing |
+| Tip | Returns a different tip on each call (may repeat if no AI key) |
+| Consumption | Send ≥2 readings to get trend detection |
+| Price | Try different `energy_type` values: `solar`, `wind`, `hydro` |
+| Sustainability | Score scales: green% → base, certificates → bonus |
+| Voice | Returns **503** if `SARVAM_API_KEY` is not set |
+| Recommendations | `match_score` should favour matching `energy_type` + within budget |
+
+---
+
 ## Importing into Postman
 
 You can generate a Postman collection automatically from the live OpenAPI spec:

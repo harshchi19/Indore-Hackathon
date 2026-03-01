@@ -7,4 +7,3 @@ export { usePayments } from "./usePayments";
 export { useMeters } from "./useMeters";
 export { useDisputes } from "./useDisputes";
 export { useAnalytics } from "./useAnalytics";
-export { usePricingStream } from "./usePricingStream";

@@ -11,7 +11,6 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, 
 import { useQuery } from "@tanstack/react-query";
 import { pricingService } from "@/services/pricingService";
 import { useListings } from "@/hooks/useListings";
-import { usePricingStream } from "@/hooks/usePricingStream";
 import { EnergySource } from "@/types";
 
 const PricingAuctions = () => {
@@ -24,9 +23,7 @@ const PricingAuctions = () => {
     refetchInterval: 30_000,
   });
 
-  // Real-time WebSocket pricing — overrides REST when connected
-  const { prices: wsPrices, isConnected: wsConnected } = usePricingStream();
-  const livePrices = wsConnected && wsPrices.length > 0 ? wsPrices : spotPrices;
+  const livePrices = spotPrices;
 
   const { data: historicalData, isLoading: histLoading } = useQuery({
     queryKey: ["pricing", "historical", "solar"],

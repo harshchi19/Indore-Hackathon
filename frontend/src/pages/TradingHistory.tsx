@@ -20,6 +20,7 @@ import { useContracts } from "@/hooks/useContracts";
 
 interface Trade {
   id: string;
+  displayId: string;
   type: "buy" | "sell";
   energyType: "solar" | "wind" | "hydro" | "biogas";
   counterparty: string;
@@ -40,7 +41,8 @@ const TradingHistory = () => {
   const trades: Trade[] = useMemo(() => {
     if (!contractsRes?.items) return [];
     return contractsRes.items.map((c) => ({
-      id: c.id.slice(0, 8).toUpperCase(),
+      id: c.id,  // full id used as React key
+      displayId: c.id.slice(0, 8).toUpperCase(),
       type: (c.buyer_id === c.id ? "sell" : "buy") as "buy" | "sell",
       energyType: "solar" as Trade["energyType"],
       counterparty: c.producer_id?.slice(0, 12) || "Unknown",
@@ -327,7 +329,7 @@ const TradingHistory = () => {
                             className="border-b border-border/50 hover:bg-muted/30 transition-colors"
                           >
                             <td className="py-3 px-4">
-                              <span className="text-sm font-mono text-muted-foreground">{trade.id}</span>
+                              <span className="text-sm font-mono text-muted-foreground">{trade.displayId}</span>
                             </td>
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-2">

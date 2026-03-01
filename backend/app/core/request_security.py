@@ -37,6 +37,10 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        # Skip processing for WebSocket upgrades
+        if request.scope.get("type") == "websocket" or request.headers.get("upgrade", "").lower() == "websocket":
+            return await call_next(request)
+
         # Generate or use existing request ID
         request_id = request.headers.get("X-Request-ID")
         if not request_id:
@@ -71,6 +75,10 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        # Skip processing for WebSocket upgrades
+        if request.scope.get("type") == "websocket" or request.headers.get("upgrade", "").lower() == "websocket":
+            return await call_next(request)
+
         # Check Content-Length header
         content_length = request.headers.get("content-length")
         
@@ -142,6 +150,10 @@ class SuspiciousRequestMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        # Skip processing for WebSocket upgrades
+        if request.scope.get("type") == "websocket" or request.headers.get("upgrade", "").lower() == "websocket":
+            return await call_next(request)
+
         # Check URL path
         path = request.url.path.lower()
         query = str(request.url.query).lower() if request.url.query else ""

@@ -18,7 +18,6 @@ export default defineConfig(({ mode }) => ({
       "/api": {
         target: "http://localhost:8000",
         changeOrigin: true,
-        ws: true, // proxy WebSocket upgrades (ws://localhost:8080/api/... → ws://localhost:8000/api/...)
       },
     },
   },

@@ -17,6 +17,7 @@ import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { useNavigate } from "react-router-dom";
 import { useCreateListing } from "@/hooks/useListings";
+import { useProducers } from "@/hooks/useProducers";
 import type { EnergySource } from "@/types";
 
 const CreateListing = () => {
@@ -54,12 +55,18 @@ const CreateListing = () => {
   ];
 
   const createMutation = useCreateListing();
+  const { data: producersRes } = useProducers({ limit: 1 });
+  const myProducerId = producersRes?.items?.[0]?.id;
 
   const handleSubmit = async () => {
+    if (!myProducerId) {
+      alert("You need to create a Producer profile before listing energy. Go to Marketplace → Become a Producer.");
+      return;
+    }
     setIsSubmitting(true);
     try {
       await createMutation.mutateAsync({
-        producer_id: "default", // will be set by backend from auth
+        producer_id: myProducerId,
         title: `${formData.energyType.charAt(0).toUpperCase() + formData.energyType.slice(1)} Energy - ${formData.capacity} kWh`,
         description: formData.description || undefined,
         energy_source: formData.energyType as EnergySource,

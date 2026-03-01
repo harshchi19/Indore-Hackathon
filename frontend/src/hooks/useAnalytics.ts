@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { analyticsService } from "@/services/analyticsService";
+import { getAccessToken } from "@/services/apiClient";
 import type {
   CO2Report,
   MonthlyAnalytics,
@@ -28,6 +29,7 @@ export function useAnalytics(producerId?: string) {
     queryKey: analyticsKeys.dashboard(producerId),
     queryFn: () => analyticsService.getDashboard(producerId),
     staleTime: 30_000,
+    enabled: !!getAccessToken(),
   });
 }
 

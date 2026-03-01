@@ -62,9 +62,24 @@ async def lifespan(app: FastAPI):
         logger.error("Background workers failed to start: %s", exc)
         # Non-fatal – app continues without workers
 
+    # Initialize Neo4j graph database if enabled
+    if settings.ENABLE_NEO4J:
+        try:
+            from app.services.neo4j_service import init_neo4j
+            await init_neo4j()
+            logger.info("Neo4j graph database initialized")
+        except Exception as exc:
+            logger.warning("Neo4j initialization failed (non-fatal): %s", exc)
+
     yield
 
     # ── shutdown ──
+    if settings.ENABLE_NEO4J:
+        try:
+            from app.services.neo4j_service import close_neo4j
+            await close_neo4j()
+        except Exception:
+            pass
     for task in (pricing_task, certificate_task, meter_task, analytics_task):
         if task is not None:
             task.cancel()

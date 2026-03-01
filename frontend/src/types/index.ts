@@ -10,3 +10,4 @@ export * from "./payment";
 export * from "./meter";
 export * from "./dispute";
 export * from "./analytics";
+export * from "./ai";

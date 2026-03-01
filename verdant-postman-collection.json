@@ -1,0 +1,1663 @@
+{
+  "info": {
+    "_postman_id": "verdant-energy-platform-v2",
+    "name": "Verdant Energy Platform",
+    "description": "Complete API collection for Verdant Energy Platform. Import verdant-environment.json as your environment before testing. Recommended test order: Health → Auth (Login) → Marketplace → Pricing → Contracts → Payments → Certificates → Meters → Disputes → Analytics → AI Services.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "01 - Health",
+      "item": [
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Swagger Docs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/docs",
+              "host": ["{{base_url}}"],
+              "path": ["docs"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Auth",
+      "item": [
+        {
+          "name": "Register (Producer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var body = pm.response.json();",
+                  "  pm.environment.set('user_id', body.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@verdant.test\",\n  \"password\": \"StrongPass123!\",\n  \"full_name\": \"Alice Green\",\n  \"role\": \"producer\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Register (Consumer)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"bob@verdant.test\",\n  \"password\": \"StrongPass123!\",\n  \"full_name\": \"Bob Consumer\",\n  \"role\": \"consumer\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Register (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@verdant.test\",\n  \"password\": \"StrongPass123!\",\n  \"full_name\": \"Admin User\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var body = pm.response.json();",
+                  "  pm.environment.set('access_token', body.access_token);",
+                  "  pm.environment.set('refresh_token', body.refresh_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@verdant.test\",\n  \"password\": \"StrongPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User (me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var body = pm.response.json();",
+                  "  pm.environment.set('access_token', body.access_token);",
+                  "  pm.environment.set('refresh_token', body.refresh_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            }
+          }
+        },
+        {
+          "name": "Logout All Devices",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/logout-all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "logout-all"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Users",
+      "item": [
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users", "{{user_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Marketplace",
+      "item": [
+        {
+          "name": "Create Producer Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.environment.set('producer_id', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_name\": \"SolarEdge Gujarat\",\n  \"description\": \"Rooftop solar energy from Ahmedabad district\",\n  \"energy_sources\": [\"solar\", \"wind\"],\n  \"capacity_kw\": 500.0,\n  \"location\": \"Ahmedabad, Gujarat\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketplace/producers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketplace", "producers"]
+            }
+          }
+        },
+        {
+          "name": "List Producers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketplace/producers?skip=0&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketplace", "producers"],
+              "query": [
+                { "key": "skip", "value": "0" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Producers (Verified Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketplace/producers?status=verified",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketplace", "producers"],
+              "query": [{ "key": "status", "value": "verified" }]
+            }
+          }
+        },
+        {
+          "name": "Get Producer by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketplace/producers/{{producer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketplace", "producers", "{{producer_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Verify Producer (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketplace/producers/{{producer_id}}/verify",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketplace", "producers", "{{producer_id}}", "verify"]
+            }
+          }
+        },
+        {
+          "name": "Create Energy Listing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.environment.set('listing_id', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"producer_id\": \"{{producer_id}}\",\n  \"title\": \"Gujarat Solar - 500 kWh Block\",\n  \"description\": \"Premium rooftop solar from Ahmedabad. Day-time supply, 8AM-6PM.\",\n  \"energy_source\": \"solar\",\n  \"quantity_kwh\": 500.0,\n  \"price_per_kwh\": 4.5,\n  \"min_purchase_kwh\": 50.0,\n  \"available_until\": \"2026-12-31T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketplace/listings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketplace", "listings"]
+            }
+          }
+        },
+        {
+          "name": "Browse Listings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketplace/listings?status=active&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketplace", "listings"],
+              "query": [
+                { "key": "status", "value": "active" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Browse Listings (Solar Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketplace/listings?energy_source=solar",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketplace", "listings"],
+              "query": [{ "key": "energy_source", "value": "solar" }]
+            }
+          }
+        },
+        {
+          "name": "Get Listing by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketplace/listings/{{listing_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketplace", "listings", "{{listing_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Buy Energy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listing_id\": \"{{listing_id}}\",\n  \"quantity_kwh\": 100.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketplace/buy",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "marketplace", "buy"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Pricing",
+      "item": [
+        {
+          "name": "Spot Price - Solar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pricing/spot?source=solar",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pricing", "spot"],
+              "query": [{ "key": "source", "value": "solar" }]
+            }
+          }
+        },
+        {
+          "name": "Spot Price - Wind",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pricing/spot?source=wind",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pricing", "spot"],
+              "query": [{ "key": "source", "value": "wind" }]
+            }
+          }
+        },
+        {
+          "name": "Spot Price - Hydro",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pricing/spot?source=hydro",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pricing", "spot"],
+              "query": [{ "key": "source", "value": "hydro" }]
+            }
+          }
+        },
+        {
+          "name": "All Spot Prices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pricing/spot/all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pricing", "spot", "all"]
+            }
+          }
+        },
+        {
+          "name": "Historical Prices - 24h Solar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pricing/historical?source=solar&hours=24&interval_minutes=15",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pricing", "historical"],
+              "query": [
+                { "key": "source", "value": "solar" },
+                { "key": "hours", "value": "24" },
+                { "key": "interval_minutes", "value": "15" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historical Prices - 48h Wind",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pricing/historical?source=wind&hours=48&interval_minutes=30",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pricing", "historical"],
+              "query": [
+                { "key": "source", "value": "wind" },
+                { "key": "hours", "value": "48" },
+                { "key": "interval_minutes", "value": "30" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Contracts",
+      "item": [
+        {
+          "name": "Create Contract",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.environment.set('contract_id', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"buyer_id\": \"{{user_id}}\",\n  \"producer_id\": \"{{producer_id}}\",\n  \"listing_id\": \"{{listing_id}}\",\n  \"volume_kwh\": 100.0,\n  \"price_per_kwh\": 4.5,\n  \"contract_type\": \"spot\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/contracts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "contracts"]
+            }
+          }
+        },
+        {
+          "name": "List Contracts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/contracts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "contracts"]
+            }
+          }
+        },
+        {
+          "name": "List Contracts (By Buyer)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/contracts?buyer_id={{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "contracts"],
+              "query": [{ "key": "buyer_id", "value": "{{user_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "List Contracts (Pending)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/contracts?status=pending",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "contracts"],
+              "query": [{ "key": "status", "value": "pending" }]
+            }
+          }
+        },
+        {
+          "name": "Get Contract by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/contracts/{{contract_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "contracts", "{{contract_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Sign Contract (Buyer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"signer_role\": \"buyer\",\n  \"signature\": \"buyer-digital-signature-hash\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/contracts/{{contract_id}}/sign",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "contracts", "{{contract_id}}", "sign"]
+            }
+          }
+        },
+        {
+          "name": "Sign Contract (Producer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"signer_role\": \"producer\",\n  \"signature\": \"producer-digital-signature-hash\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/contracts/{{contract_id}}/sign",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "contracts", "{{contract_id}}", "sign"]
+            }
+          }
+        },
+        {
+          "name": "Settle Contract",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/contracts/{{contract_id}}/settle",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "contracts", "{{contract_id}}", "settle"]
+            }
+          }
+        },
+        {
+          "name": "Dispute Contract",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/contracts/{{contract_id}}/dispute",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "contracts", "{{contract_id}}", "dispute"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Payments",
+      "item": [
+        {
+          "name": "Initiate Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.environment.set('payment_id', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contract_id\": \"{{contract_id}}\",\n  \"amount_eur\": 450.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments"]
+            }
+          }
+        },
+        {
+          "name": "List Payments",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments"]
+            }
+          }
+        },
+        {
+          "name": "List Payments (By Contract)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments?contract_id={{contract_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments"],
+              "query": [{ "key": "contract_id", "value": "{{contract_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "List Payments (Pending)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments?status=pending",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments"],
+              "query": [{ "key": "status", "value": "pending" }]
+            }
+          }
+        },
+        {
+          "name": "Get Payment by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments/{{payment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments", "{{payment_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Payment Webhook - Completed",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_id\": \"{{payment_id}}\",\n  \"status\": \"completed\",\n  \"transaction_ref\": \"EXT-TXN-ABC123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments/webhook",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments", "webhook"]
+            }
+          }
+        },
+        {
+          "name": "Payment Webhook - Failed",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_id\": \"{{payment_id}}\",\n  \"status\": \"failed\",\n  \"transaction_ref\": \"EXT-TXN-FAIL001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments/webhook",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments", "webhook"]
+            }
+          }
+        },
+        {
+          "name": "Settlement Payout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments/{{contract_id}}/settle",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments", "{{contract_id}}", "settle"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Certificates",
+      "item": [
+        {
+          "name": "Issue Certificate",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.environment.set('certificate_id', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contract_id\": \"{{contract_id}}\",\n  \"energy_source\": \"solar\",\n  \"validity_days\": 365\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates"]
+            }
+          }
+        },
+        {
+          "name": "List Certificates",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates"]
+            }
+          }
+        },
+        {
+          "name": "List Certificates (By Producer)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates?producer_id={{producer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates"],
+              "query": [{ "key": "producer_id", "value": "{{producer_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "List Certificates (Valid Only)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates?valid_only=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates"],
+              "query": [{ "key": "valid_only", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "Get Certificate by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates/{{certificate_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates", "{{certificate_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Verify Certificate (Public - No Auth)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates/{{certificate_id}}/verify",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "certificates", "{{certificate_id}}", "verify"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Smart Meters",
+      "item": [
+        {
+          "name": "Ingest Single Reading",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_id\": \"DEVICE-001\",\n  \"reading_kwh\": 1234.56,\n  \"source\": \"solar\",\n  \"timestamp\": \"2026-03-01T08:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/meters/readings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "meters", "readings"]
+            }
+          }
+        },
+        {
+          "name": "Ingest Reading - Anomaly (Negative kWh)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_id\": \"DEVICE-001\",\n  \"reading_kwh\": -10.0,\n  \"source\": \"solar\",\n  \"timestamp\": \"2026-03-01T09:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/meters/readings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "meters", "readings"]
+            }
+          }
+        },
+        {
+          "name": "Ingest Reading - Anomaly (Sudden Jump)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_id\": \"DEVICE-001\",\n  \"reading_kwh\": 20000.0,\n  \"source\": \"grid\",\n  \"timestamp\": \"2026-03-01T10:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/meters/readings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "meters", "readings"]
+            }
+          }
+        },
+        {
+          "name": "Batch Ingest Readings",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"readings\": [\n    { \"device_id\": \"DEVICE-001\", \"reading_kwh\": 1235.0, \"source\": \"solar\", \"timestamp\": \"2026-03-01T11:00:00Z\" },\n    { \"device_id\": \"DEVICE-001\", \"reading_kwh\": 1235.8, \"source\": \"solar\", \"timestamp\": \"2026-03-01T12:00:00Z\" },\n    { \"device_id\": \"DEVICE-001\", \"reading_kwh\": 1237.1, \"source\": \"solar\", \"timestamp\": \"2026-03-01T13:00:00Z\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/meters/readings/batch",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "meters", "readings", "batch"]
+            }
+          }
+        },
+        {
+          "name": "List Readings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/meters/readings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "meters", "readings"]
+            }
+          }
+        },
+        {
+          "name": "List Readings (By Device)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/meters/readings?device_id=DEVICE-001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "meters", "readings"],
+              "query": [{ "key": "device_id", "value": "DEVICE-001" }]
+            }
+          }
+        },
+        {
+          "name": "List Readings (Anomalies Only)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/meters/readings?status=anomaly&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "meters", "readings"],
+              "query": [
+                { "key": "status", "value": "anomaly" },
+                { "key": "limit", "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Anomaly Report (By Device)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/meters/anomalies/DEVICE-001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "meters", "anomalies", "DEVICE-001"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Disputes",
+      "item": [
+        {
+          "name": "Create Dispute",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.environment.set('dispute_id', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contract_id\": \"{{contract_id}}\",\n  \"description\": \"Energy delivery below contracted volume. Expected 100 kWh, received 72 kWh per meter logs.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/disputes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "disputes"]
+            }
+          }
+        },
+        {
+          "name": "List Disputes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/disputes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "disputes"]
+            }
+          }
+        },
+        {
+          "name": "List Disputes (By Contract)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/disputes?contract_id={{contract_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "disputes"],
+              "query": [{ "key": "contract_id", "value": "{{contract_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "List Disputes (Open)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/disputes?status=open",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "disputes"],
+              "query": [{ "key": "status", "value": "open" }]
+            }
+          }
+        },
+        {
+          "name": "Get Dispute by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/disputes/{{dispute_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "disputes", "{{dispute_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Add Evidence to Dispute",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evidence_type\": \"meter_reading\",\n  \"description\": \"Smart meter log showing 72 kWh delivery on contract date\",\n  \"url\": \"https://storage.verdant.io/evidence/meter-log-001.pdf\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/disputes/{{dispute_id}}/evidence",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "disputes", "{{dispute_id}}", "evidence"]
+            }
+          }
+        },
+        {
+          "name": "Resolve Dispute - Favour Buyer (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resolution\": \"resolved_buyer\",\n  \"note\": \"Meter logs confirmed under-delivery. Partial refund issued to buyer.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/disputes/{{dispute_id}}/resolve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "disputes", "{{dispute_id}}", "resolve"]
+            }
+          }
+        },
+        {
+          "name": "Resolve Dispute - Favour Producer (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resolution\": \"resolved_producer\",\n  \"note\": \"Evidence shows full delivery was made. Dispute closed in favour of producer.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/disputes/{{dispute_id}}/resolve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "disputes", "{{dispute_id}}", "resolve"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Analytics",
+      "item": [
+        {
+          "name": "CO2 Avoided (By Contract)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/co2/{{contract_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "co2", "{{contract_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Monthly Analytics (Full Year 2026)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/monthly?year=2026",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "monthly"],
+              "query": [{ "key": "year", "value": "2026" }]
+            }
+          }
+        },
+        {
+          "name": "Monthly Analytics (Specific Month)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/monthly?year=2026&month=3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "monthly"],
+              "query": [
+                { "key": "year", "value": "2026" },
+                { "key": "month", "value": "3" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Dashboard (By Producer)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/dashboard?producer_id={{producer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "dashboard"],
+              "query": [{ "key": "producer_id", "value": "{{producer_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "Producer Performance (Top 10)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/producers/performance?top_n=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "producers", "performance"],
+              "query": [{ "key": "top_n", "value": "10" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - AI Services",
+      "item": [
+        {
+          "name": "AI Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "health"]
+            }
+          }
+        },
+        {
+          "name": "Get Available AI Models",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/models",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "models"]
+            }
+          }
+        },
+        {
+          "name": "Chat - Energy Buying Question",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"What is the best time to buy solar energy in India?\",\n  \"user_id\": \"test-user-1\",\n  \"context\": {},\n  \"use_history\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "chat"]
+            }
+          }
+        },
+        {
+          "name": "Chat - Ask About RECs",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"How do Renewable Energy Certificates work in India?\",\n  \"user_id\": \"test-user-1\",\n  \"context\": {},\n  \"use_history\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "chat"]
+            }
+          }
+        },
+        {
+          "name": "Chat - Carbon Footprint Question",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"How can I reduce my carbon footprint by switching to green energy?\",\n  \"user_id\": \"test-user-1\",\n  \"context\": {},\n  \"use_history\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "chat"]
+            }
+          }
+        },
+        {
+          "name": "Clear Chat History",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/chat/clear?user_id=test-user-1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "chat", "clear"],
+              "query": [{ "key": "user_id", "value": "test-user-1" }]
+            }
+          }
+        },
+        {
+          "name": "Get Energy Tip",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/tip",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "tip"]
+            }
+          }
+        },
+        {
+          "name": "Explain Concept - REC",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"concept\": \"Renewable Energy Certificates\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/explain",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "explain"]
+            }
+          }
+        },
+        {
+          "name": "Explain Concept - Net Metering",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"concept\": \"Net Metering\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/explain",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "explain"]
+            }
+          }
+        },
+        {
+          "name": "Explain Concept - Peer-to-Peer Trading",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"concept\": \"Peer-to-Peer Energy Trading\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/explain",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "explain"]
+            }
+          }
+        },
+        {
+          "name": "Analyze Consumption",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"readings\": [\n    { \"timestamp\": \"2026-03-01T06:00:00Z\", \"kwh\": 2.5, \"source\": \"grid\" },\n    { \"timestamp\": \"2026-03-01T12:00:00Z\", \"kwh\": 1.8, \"source\": \"solar\" },\n    { \"timestamp\": \"2026-03-01T18:00:00Z\", \"kwh\": 4.2, \"source\": \"grid\" },\n    { \"timestamp\": \"2026-03-02T06:00:00Z\", \"kwh\": 2.3, \"source\": \"grid\" },\n    { \"timestamp\": \"2026-03-02T12:00:00Z\", \"kwh\": 1.5, \"source\": \"solar\" },\n    { \"timestamp\": \"2026-03-02T18:00:00Z\", \"kwh\": 5.1, \"source\": \"grid\" }\n  ],\n  \"user_profile\": {\n    \"city\": \"Pune\",\n    \"household_size\": 4,\n    \"has_solar\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/analytics/consumption",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "analytics", "consumption"]
+            }
+          }
+        },
+        {
+          "name": "Predict Price - Solar",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"energy_type\": \"solar\",\n  \"current_price\": 5.5,\n  \"historical_prices\": [5.2, 5.3, 5.1, 5.4, 5.5]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/analytics/predict-price",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "analytics", "predict-price"]
+            }
+          }
+        },
+        {
+          "name": "Predict Price - Wind",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"energy_type\": \"wind\",\n  \"current_price\": 4.8,\n  \"historical_prices\": [4.5, 4.6, 4.7, 4.9, 4.8]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/analytics/predict-price",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "analytics", "predict-price"]
+            }
+          }
+        },
+        {
+          "name": "Sustainability Score - High Green",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"total_consumption_kwh\": 1000.0,\n  \"green_energy_kwh\": 650.0,\n  \"certificates_owned\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/analytics/sustainability",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "analytics", "sustainability"]
+            }
+          }
+        },
+        {
+          "name": "Sustainability Score - Low Green",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"total_consumption_kwh\": 1000.0,\n  \"green_energy_kwh\": 100.0,\n  \"certificates_owned\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/analytics/sustainability",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "analytics", "sustainability"]
+            }
+          }
+        },
+        {
+          "name": "AI Producer Recommendations",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_preferences\": {\n    \"energy_type\": \"solar\",\n    \"max_price_per_kwh\": 6.0,\n    \"location\": \"Pune\",\n    \"reliability_min\": 90\n  },\n  \"available_producers\": [\n    { \"id\": \"p1\", \"energy_type\": \"solar\", \"price_per_kwh\": 5.2, \"reliability\": 98, \"location\": \"Pune\" },\n    { \"id\": \"p2\", \"energy_type\": \"wind\", \"price_per_kwh\": 6.5, \"reliability\": 94, \"location\": \"Nashik\" },\n    { \"id\": \"p3\", \"energy_type\": \"solar\", \"price_per_kwh\": 4.8, \"reliability\": 96, \"location\": \"Pune\" }\n  ],\n  \"limit\": 3\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/analytics/recommendations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "analytics", "recommendations"]
+            }
+          }
+        },
+        {
+          "name": "Voice TTS - Hindi (Aditya)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Verdant Energy Platform mein aapka swagat hai. Swachh urja ka bhavishy aapke haath mein hai.\",\n  \"language\": \"hi-IN\",\n  \"speaker\": \"Aditya\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/voice/speak",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "voice", "speak"]
+            }
+          }
+        },
+        {
+          "name": "Voice TTS - English Indian (Priya)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Your solar energy contract has been successfully created. You are now contributing to a greener India.\",\n  \"language\": \"en-IN\",\n  \"speaker\": \"Priya\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/voice/speak",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "voice", "speak"]
+            }
+          }
+        },
+        {
+          "name": "Voice TTS - Tamil (Kavya)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Pasumai Urja Thalattatil Ungalai Vaerpadukiren.\",\n  \"language\": \"ta-IN\",\n  \"speaker\": \"Kavya\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/voice/speak",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "voice", "speak"]
+            }
+          }
+        },
+        {
+          "name": "Voice Notification - Welcome",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notification_type\": \"welcome\",\n  \"language\": \"hi-IN\",\n  \"params\": {}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/voice/notification",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "voice", "notification"]
+            }
+          }
+        },
+        {
+          "name": "Voice Notification - Contract Created",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notification_type\": \"contract_created\",\n  \"language\": \"en-IN\",\n  \"params\": { \"amount\": \"450\", \"producer\": \"SolarEdge Gujarat\" }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/voice/notification",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "voice", "notification"]
+            }
+          }
+        },
+        {
+          "name": "Voice Notification - Payment Success",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notification_type\": \"payment_success\",\n  \"language\": \"hi-IN\",\n  \"params\": { \"amount\": \"2250\" }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/voice/notification",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "voice", "notification"]
+            }
+          }
+        },
+        {
+          "name": "Voice Notification - Price Alert (Solar Down)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notification_type\": \"price_alert\",\n  \"language\": \"en-IN\",\n  \"params\": { \"energy_type\": \"solar\", \"price\": \"4.8\", \"change\": \"12\", \"direction\": \"down\" }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/voice/notification",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "voice", "notification"]
+            }
+          }
+        },
+        {
+          "name": "Voice Notification - Certificate Earned",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notification_type\": \"certificate_earned\",\n  \"language\": \"en-IN\",\n  \"params\": { \"carbon\": \"25.4\" }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/voice/notification",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "voice", "notification"]
+            }
+          }
+        },
+        {
+          "name": "Voice Notification - Daily Summary",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notification_type\": \"daily_summary\",\n  \"language\": \"en-IN\",\n  \"params\": { \"time_of_day\": \"morning\", \"consumption\": \"12.4\", \"comparison\": \"5% less than\" }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/voice/notification",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "voice", "notification"]
+            }
+          }
+        },
+        {
+          "name": "List Supported Languages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/voice/languages",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "voice", "languages"]
+            }
+          }
+        },
+        {
+          "name": "List Available Speakers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/voice/speakers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "voice", "speakers"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

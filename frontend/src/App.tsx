@@ -38,6 +38,9 @@ import OrderDetails from "./pages/OrderDetails";
 import ProducerDetail from "./pages/ProducerDetail";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
+import AIAssistant from "./pages/AIAssistant";
+import AIAnalytics from "./pages/AIAnalytics";
+import AIVoice from "./pages/AIVoice";
 
 const queryClient = createQueryClientConfig();
 
@@ -52,7 +55,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Landing />} />
@@ -83,6 +86,9 @@ const App = () => (
           <Route path="/order/:orderId" element={<P><OrderDetails /></P>} />
           <Route path="/producer/:producerId" element={<P><ProducerDetail /></P>} />
           <Route path="/ai-brain" element={<P><AIBrain /></P>} />
+          <Route path="/ai-assistant" element={<P><AIAssistant /></P>} />
+          <Route path="/ai-analytics" element={<P><AIAnalytics /></P>} />
+          <Route path="/ai-voice" element={<P><AIVoice /></P>} />
           <Route path="/smart-city" element={<P><SmartCity /></P>} />
           <Route path="/future" element={<P><FutureSimulator /></P>} />
           <Route path="/investor" element={<P><InvestorZone /></P>} />
