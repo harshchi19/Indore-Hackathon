@@ -5,6 +5,7 @@ Motor + Beanie async MongoDB init.
 
 from __future__ import annotations
 
+import certifi
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 from app.core.config import get_settings
@@ -41,7 +42,8 @@ async def connect_db() -> AsyncIOMotorDatabase:
 
     _client = AsyncIOMotorClient(
         settings.MONGODB_URI,
-        serverSelectionTimeoutMS=10_000,  # fail fast (10s) instead of 30s default
+        tlsCAFile=certifi.where(),       # Fix: use certifi CA bundle for Atlas TLS
+        serverSelectionTimeoutMS=10_000,
         connectTimeoutMS=10_000,
         socketTimeoutMS=10_000,
     )
