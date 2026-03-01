@@ -8,9 +8,12 @@ services:
     region: oregon  # Change to your preferred region
     plan: free      # free | starter | standard | pro
 
+    # ── Python Version ────────────────────────────────────
+    pythonVersion: "3.11.7"
+
     # ── Build ─────────────────────────────────────────────
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
 
     # ── Start ─────────────────────────────────────────────
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
@@ -58,6 +61,3 @@ services:
 
       - key: REFRESH_TOKEN_EXPIRE_DAYS
         value: "7"
-
-      - key: PYTHON_VERSION
-        value: "3.11.7"
