@@ -29,12 +29,20 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     - Cache-Control: Prevents caching of sensitive data
     """
 
+    # Paths that serve Swagger UI – need relaxed CSP for CDN assets
+    _DOCS_PATHS = {"/docs", "/redoc", "/openapi.json"}
+
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         response = await call_next(request)
-        
+
         if not settings.ENABLE_SECURITY_HEADERS:
+            return response
+
+        # Skip restrictive CSP for API docs so Swagger UI can load from CDN
+        is_docs = request.url.path in self._DOCS_PATHS
+        if is_docs:
             return response
 
         # Prevent MIME type sniffing
