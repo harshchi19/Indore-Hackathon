@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Bell, CheckCircle, FileText, CreditCard, Award, Gavel, Plug, Zap, Settings, Check, Trash2, Filter } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 /* TODO: Replace with API data when backend notifications endpoint is available */
 const notifications = [
@@ -216,7 +217,7 @@ const Notifications = () => {
                 transition={{ delay: 0.5 }}
                 className="text-center"
               >
-                <Button variant="outline" className="text-xs">
+                <Button variant="outline" className="text-xs" onClick={() => toast.info("Loading more notifications...")}>
                   Load More Notifications
                 </Button>
               </motion.div>

@@ -47,6 +47,30 @@ export interface ProducerRecommendation {
   reason: string;
 }
 
+export interface SimilarListing {
+  listing_id: string;
+  title: string;
+  energy_source: string;
+  price_per_kwh: number;
+  similarity_score: number;
+}
+
+export interface ConnectionPath {
+  from_user: string;
+  to_producer: string;
+  path_exists: boolean;
+  hops: number;
+  path: { node_type: string; node_id: string; name: string }[];
+}
+
+export interface SyncResult {
+  users: number;
+  producers: number;
+  listings: number;
+  contracts: number;
+  relationships: number;
+}
+
 export const graphService = {
   async getHealth(): Promise<{ status: string; details?: any }> {
     const { data } = await apiClient.get("/graph/health");
@@ -96,4 +120,80 @@ export const graphService = {
     });
     return data;
   },
+
+  /* ── Similar Listings ─────────────────────────────── */
+
+  async getSimilarListings(
+    listingId: string,
+    limit = 5
+  ): Promise<{ listing_id: string; similar_listings: SimilarListing[]; count: number }> {
+    const { data } = await apiClient.get(`/graph/recommendations/listings/${listingId}`, {
+      params: { limit },
+    });
+    return data;
+  },
+
+  /* ── Connection Path ──────────────────────────────── */
+
+  async findConnectionPath(
+    producerId: string,
+    maxHops = 4
+  ): Promise<ConnectionPath> {
+    const { data } = await apiClient.get(`/graph/analytics/path/${producerId}`, {
+      params: { max_hops: maxHops },
+    });
+    return data;
+  },
+
+  /* ── Sync Operations (Admin) ──────────────────────── */
+
+  async fullSync(): Promise<{ status: string; synced: SyncResult }> {
+    const { data } = await apiClient.post("/graph/sync/full");
+    return data;
+  },
+
+  async syncUser(userId: string): Promise<{ status: string; synced: any }> {
+    const { data } = await apiClient.post(`/graph/sync/user/${userId}`);
+    return data;
+  },
+
+  /* ── Custom Cypher Query ──────────────────────────── */
+
+  async runQuery(
+    query: string,
+    params: Record<string, any> = {}
+  ): Promise<{
+    status: string;
+    query: string;
+    nodes: GraphNode[];
+    edges: GraphEdge[];
+    records: any[];
+    count: number;
+  }> {
+    const { data } = await apiClient.post("/graph/query", { query, params });
+    return data;
+  },
+
+  async getSampleQueries(): Promise<{
+    queries: Array<{
+      name: string;
+      description: string;
+      query: string;
+    }>;
+  }> {
+    const { data } = await apiClient.get("/graph/sample-queries");
+    return data;
+  },
 };
+
+export interface GraphNode {
+  id: string;
+  label: string;
+  properties: Record<string, any>;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  type: string;
+}

@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { VoiceProvider } from "@/context/VoiceContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { createQueryClientConfig } from "@/utils/apiErrorHandler";
 import Landing from "./pages/Landing";
@@ -41,6 +42,7 @@ import NotFound from "./pages/NotFound";
 import AIAssistant from "./pages/AIAssistant";
 import AIAnalytics from "./pages/AIAnalytics";
 import AIVoice from "./pages/AIVoice";
+import NetworkInsights from "./pages/NetworkInsights";
 
 const queryClient = createQueryClientConfig();
 
@@ -52,6 +54,7 @@ const P = ({ children }: { children: React.ReactNode }) => (
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+    <VoiceProvider>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -73,6 +76,7 @@ const App = () => (
           <Route path="/certificates" element={<P><Certificates /></P>} />
           <Route path="/carbon" element={<P><CarbonCredit /></P>} />
           <Route path="/pricing" element={<P><PricingAuctions /></P>} />
+          <Route path="/network-insights" element={<P><NetworkInsights /></P>} />
           <Route path="/payments" element={<P><Payments /></P>} />
           <Route path="/kyc" element={<P><KYC /></P>} />
           <Route path="/disputes" element={<P><Disputes /></P>} />
@@ -101,6 +105,7 @@ const App = () => (
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
+    </VoiceProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

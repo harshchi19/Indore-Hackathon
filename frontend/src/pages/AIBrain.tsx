@@ -300,7 +300,7 @@ const AIBrain = () => {
     });
     scored.sort((a, b) => b.score - a.score);
     return scored;
-  }, [budget, carbon, reliability, locality, liveAvgPrice]);
+  }, [budget, carbon, reliability, locality]);
 
   const best = recommendation[0];
 

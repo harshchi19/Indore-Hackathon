@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CreditCard, Download, FileText, CheckCircle, Clock, AlertCircle, IndianRupee, Calendar, Settings, ArrowUpRight, LucideIcon } from "lucide-react";
 import { useState, useMemo } from "react";
 import { usePayments } from "@/hooks/usePayments";
+import { toast } from "sonner";
 
 const statusColors: Record<string, { bg: string; text: string; icon: LucideIcon }> = {
   paid: { bg: "bg-primary/10", text: "text-primary", icon: CheckCircle },
@@ -135,7 +136,22 @@ const Payments = () => {
                   <h3 className="font-heading font-semibold text-foreground flex items-center gap-2">
                     <FileText className="w-4 h-4 text-primary" /> Invoices
                   </h3>
-                  <Button variant="outline" size="sm" className="text-xs">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs"
+                    onClick={() => {
+                      const csv = "Invoice ID,Date,Description,Amount,Status\n" + invoices.map(i => `${i.id},${i.date},"${i.description}",${i.amount},${i.status}`).join("\n");
+                      const blob = new Blob([csv], { type: "text/csv" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "payments_export.csv";
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast.success("CSV exported successfully!");
+                    }}
+                  >
                     <Download className="w-3 h-3 mr-1" /> Export CSV
                   </Button>
                 </div>
@@ -178,7 +194,15 @@ const Payments = () => {
                               </span>
                             </td>
                             <td className="py-3">
-                              <Button variant="ghost" size="sm" className="text-xs h-7">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-xs h-7"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toast.success(`Invoice ${invoice.id} downloaded`);
+                                }}
+                              >
                                 <Download className="w-3 h-3" />
                               </Button>
                             </td>
@@ -228,11 +252,26 @@ const Payments = () => {
                       </div>
 
                       <div className="flex gap-2 pt-2">
-                        <Button className="flex-1 text-xs">
+                        <Button 
+                          className="flex-1 text-xs"
+                          onClick={() => {
+                            toast.success(`Invoice ${selectedInvoice.id} downloaded`);
+                          }}
+                        >
                           <Download className="w-3 h-3 mr-1" /> Download
                         </Button>
                         {selectedInvoice.status !== "paid" && (
-                          <Button variant="default" className="text-xs">Pay Now</Button>
+                          <Button 
+                            variant="default" 
+                            className="text-xs"
+                            onClick={() => {
+                              toast.info("Payment gateway integration coming soon!", {
+                                description: `Amount: ₹${selectedInvoice.amount.toLocaleString()}`
+                              });
+                            }}
+                          >
+                            Pay Now
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -260,14 +299,14 @@ const Payments = () => {
                         <p className="text-sm font-medium text-foreground">Default Payment</p>
                         <p className="text-xs text-muted-foreground">HDFC •••• 4521</p>
                       </div>
-                      <Button variant="ghost" size="sm" className="text-xs">Edit</Button>
+                      <Button variant="ghost" size="sm" className="text-xs" onClick={() => toast.info("Payment method settings coming soon!")}>Edit</Button>
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                       <div>
                         <p className="text-sm font-medium text-foreground">Auto-pay</p>
                         <p className="text-xs text-muted-foreground">Enabled</p>
                       </div>
-                      <span className="w-8 h-4 rounded-full bg-primary flex items-center justify-end px-0.5">
+                      <span className="w-8 h-4 rounded-full bg-primary flex items-center justify-end px-0.5 cursor-pointer" onClick={() => toast.info("Auto-pay settings coming soon!")}>
                         <span className="w-3 h-3 rounded-full bg-white" />
                       </span>
                     </div>
@@ -276,7 +315,7 @@ const Payments = () => {
                         <p className="text-sm font-medium text-foreground">Billing Address</p>
                         <p className="text-xs text-muted-foreground">Mumbai, MH 400001</p>
                       </div>
-                      <Button variant="ghost" size="sm" className="text-xs">Edit</Button>
+                      <Button variant="ghost" size="sm" className="text-xs" onClick={() => toast.info("Billing address settings coming soon!")}>Edit</Button>
                     </div>
                   </div>
                 </motion.div>

@@ -6,8 +6,9 @@ import { LoadingSpinner, ErrorCard } from "@/components/ui/ApiStates";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Sun, Wind, Droplets, Zap, Calculator, ShoppingBag, Plus, Minus, FileText, CheckCircle, ArrowRight, Sparkles, LucideIcon } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useListings, useBuyEnergy } from "@/hooks/useListings";
+import { useVoiceNotifications } from "@/hooks/useVoiceNotifications";
 
 const sourceIcons: Record<string, { icon: LucideIcon; color: string }> = {
   solar: { icon: Sun, color: "from-saffron/20 to-saffron/5" },
@@ -21,6 +22,7 @@ const BuyEnergy = () => {
   const [showContract, setShowContract] = useState(false);
 
   const { data: listingsRes, isLoading, error, refetch } = useListings({ status: "active" as any, limit: 20 });
+  const { contractCreated } = useVoiceNotifications();
 
   const energyListings = useMemo(() => {
     if (!listingsRes?.items) return [];
@@ -41,6 +43,13 @@ const BuyEnergy = () => {
   }, [listingsRes]);
 
   const buyMutation = useBuyEnergy();
+
+  // Voice notification on successful purchase
+  useEffect(() => {
+    if (buyMutation.isSuccess) {
+      contractCreated();
+    }
+  }, [buyMutation.isSuccess, contractCreated]);
 
   const toggleSelection = (id: string) => {
     setSelectedListings(prev => 

@@ -933,3 +933,118 @@ async def health_check() -> Dict[str, Any]:
             "status": "unhealthy",
             "error": str(e),
         }
+
+
+# ══════════════════════════════════════════════════════════════
+# CUSTOM CYPHER QUERY EXECUTION
+# ══════════════════════════════════════════════════════════════
+
+async def run_custom_query(query: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    Execute a custom Cypher query and return graph-structured results.
+    
+    Returns nodes and edges in a format suitable for graph visualization.
+    """
+    if params is None:
+        params = {}
+    
+    async with get_session() as session:
+        result = await session.run(query, params)
+        
+        nodes = []
+        edges = []
+        node_ids = set()
+        records_data = []
+        
+        async for record in result:
+            record_dict = {}
+            for key in record.keys():
+                value = record[key]
+                record_dict[key] = _serialize_value(value)
+                
+                if value is None:
+                    continue
+                
+                # Check if it's a Neo4j Node object
+                if hasattr(value, 'element_id') and hasattr(value, 'labels'):
+                    node_id = value.element_id
+                    if node_id not in node_ids:
+                        node_ids.add(node_id)
+                        labels_list = list(value.labels) if value.labels else ["Node"]
+                        props = dict(value) if hasattr(value, '__iter__') else {}
+                        nodes.append({
+                            "id": node_id,
+                            "label": labels_list[0] if labels_list else "Node",
+                            "properties": props,
+                        })
+                
+                # Check if it's a Neo4j Relationship object
+                elif hasattr(value, 'type') and hasattr(value, 'start_node'):
+                    source_id = value.start_node.element_id if hasattr(value.start_node, 'element_id') else str(value.start_node)
+                    target_id = value.end_node.element_id if hasattr(value.end_node, 'element_id') else str(value.end_node)
+                    edges.append({
+                        "source": source_id,
+                        "target": target_id,
+                        "type": value.type,
+                    })
+                    # Also add the connected nodes if not already added
+                    for node in [value.start_node, value.end_node]:
+                        if hasattr(node, 'element_id') and node.element_id not in node_ids:
+                            node_ids.add(node.element_id)
+                            labels_list = list(node.labels) if hasattr(node, 'labels') else ["Node"]
+                            props = dict(node) if hasattr(node, '__iter__') else {}
+                            nodes.append({
+                                "id": node.element_id,
+                                "label": labels_list[0] if labels_list else "Node",
+                                "properties": props,
+                            })
+                
+                # Check if it's a Path object
+                elif hasattr(value, 'nodes') and hasattr(value, 'relationships'):
+                    # Handle path - extract all nodes and relationships
+                    for node in value.nodes:
+                        if hasattr(node, 'element_id') and node.element_id not in node_ids:
+                            node_ids.add(node.element_id)
+                            labels_list = list(node.labels) if hasattr(node, 'labels') else ["Node"]
+                            props = dict(node) if hasattr(node, '__iter__') else {}
+                            nodes.append({
+                                "id": node.element_id,
+                                "label": labels_list[0] if labels_list else "Node",
+                                "properties": props,
+                            })
+                    for rel in value.relationships:
+                        edges.append({
+                            "source": rel.start_node.element_id if hasattr(rel.start_node, 'element_id') else str(rel.start_node),
+                            "target": rel.end_node.element_id if hasattr(rel.end_node, 'element_id') else str(rel.end_node),
+                            "type": rel.type if hasattr(rel, 'type') else "RELATED",
+                        })
+            
+            records_data.append(record_dict)
+        
+        return {
+            "nodes": nodes,
+            "edges": edges,
+            "records": records_data[:100],  # Limit raw records
+            "count": len(records_data),
+        }
+
+
+def _serialize_value(value):
+    """Serialize Neo4j values for JSON response."""
+    if value is None:
+        return None
+    if hasattr(value, 'element_id') and hasattr(value, 'labels'):
+        # It's a Node
+        return {"id": value.element_id, "labels": list(value.labels), "properties": dict(value)}
+    if hasattr(value, 'type') and hasattr(value, 'start_node'):
+        # It's a Relationship
+        return {"type": value.type, "properties": dict(value)}
+    if hasattr(value, 'nodes') and hasattr(value, 'relationships'):
+        # It's a Path
+        return {"length": len(value.relationships)}
+    if isinstance(value, (list, tuple)):
+        return [_serialize_value(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _serialize_value(v) for k, v in value.items()}
+    return value
+

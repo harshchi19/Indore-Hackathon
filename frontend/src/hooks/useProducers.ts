@@ -21,6 +21,7 @@ export const producerKeys = {
 
 export function useProducers(params?: {
   status?: ProducerStatus;
+  owner_id?: string;
   skip?: number;
   limit?: number;
 }) {

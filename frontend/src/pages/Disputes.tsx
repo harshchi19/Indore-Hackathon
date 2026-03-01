@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Scale, FileText, Upload, MessageSquare, Clock, CheckCircle, AlertCircle, Plus, ArrowRight, History, LucideIcon } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useDisputes } from "@/hooks/useDisputes";
+import { toast } from "sonner";
 
 const statusColors: Record<string, { bg: string; text: string; icon: LucideIcon }> = {
   open: { bg: "bg-saffron/10", text: "text-saffron", icon: AlertCircle },
@@ -116,7 +117,7 @@ const Disputes = () => {
                     </p>
                     <p className="text-[11px] text-white/60 mt-1">Active</p>
                   </div>
-                  <Button className="bg-white/20 hover:bg-white/30 text-white border-0">
+                  <Button className="bg-white/20 hover:bg-white/30 text-white border-0" onClick={() => toast.info("New dispute form coming soon")}>
                     <Plus className="w-4 h-4 mr-2" /> New Dispute
                   </Button>
                 </div>
@@ -218,10 +219,10 @@ const Disputes = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="text-xs">
+                    <Button variant="outline" size="sm" className="text-xs" onClick={() => toast.info("Evidence upload feature coming soon")}>
                       <Upload className="w-3 h-3 mr-1" /> Upload Evidence
                     </Button>
-                    <Button variant="outline" size="sm" className="text-xs">
+                    <Button variant="outline" size="sm" className="text-xs" onClick={() => toast.info("Full history view coming soon")}>
                       <History className="w-3 h-3 mr-1" /> View Full History
                     </Button>
                   </div>
@@ -264,7 +265,7 @@ const Disputes = () => {
                       placeholder="Type your message..."
                       className="flex-1 h-10 px-4 text-sm rounded-lg bg-background border border-border focus:border-primary focus:outline-none"
                     />
-                    <Button className="h-10">
+                    <Button className="h-10" onClick={() => toast.success("Message sent to dispute thread")}>
                       Send <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   </div>

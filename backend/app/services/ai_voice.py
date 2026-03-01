@@ -86,7 +86,7 @@ class SarvamClient:
     """Sarvam AI API client for TTS and translation."""
     
     BASE_URL = "https://api.sarvam.ai"
-    TTS_ENDPOINT = "/text-to-speech"
+    TTS_ENDPOINT = "/text-to-speech/stream"  # New streaming endpoint
     TRANSLATE_ENDPOINT = "/translate"
     
     def __init__(self, api_key: str):
@@ -104,24 +104,24 @@ class SarvamClient:
         pitch: float = 0.0,
         pace: float = 1.0,
         loudness: float = 1.0,
-        model: str = "bulbul:v1"
+        model: str = "bulbul:v3"
     ) -> Dict[str, Any]:
         """
-        Convert text to speech using Sarvam Bulbul model.
+        Convert text to speech using Sarvam Bulbul v3 streaming model.
         
         Returns:
             Dict with 'audios' list containing base64 encoded audio
         """
+        # New API format for bulbul:v3
         payload = {
-            "inputs": [text],
+            "text": text,
             "target_language_code": language,
-            "speaker": speaker,
-            "pitch": pitch,
+            "speaker": speaker.lower(),  # Sarvam API requires lowercase speaker names
+            "model": model,
             "pace": pace,
-            "loudness": loudness,
             "speech_sample_rate": 22050,
-            "enable_preprocessing": True,
-            "model": model
+            "output_audio_codec": "mp3",
+            "enable_preprocessing": True
         }
         
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -131,7 +131,12 @@ class SarvamClient:
                 json=payload
             )
             response.raise_for_status()
-            return response.json()
+            
+            # Streaming API returns raw audio bytes (MP3)
+            audio_bytes = response.content
+            audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
+            
+            return {"audios": [audio_base64], "format": "mp3"}
     
     async def translate(
         self,
@@ -164,31 +169,31 @@ class SarvamClient:
 # ── Voice Templates for Energy Platform ────────────────────────
 VOICE_TEMPLATES = {
     "welcome": {
-        "en-IN": "Welcome to Verdant Energy Platform. Your gateway to clean, green energy trading.",
-        "hi-IN": "वर्डेंट एनर्जी प्लेटफॉर्म में आपका स्वागत है। स्वच्छ, हरित ऊर्जा व्यापार का आपका द्वार।",
-        "mr-IN": "वर्डेंट एनर्जी प्लॅटफॉर्मवर आपले स्वागत आहे। स्वच्छ, हरित ऊर्जा व्यापाराचे तुमचे द्वार.",
-        "ta-IN": "வெர்டண்ட் எனர்ஜி பிளாட்ஃபார்மிற்கு வரவேற்கிறோம். தூய்மையான, பசுமை ஆற்றல் வர்த்தகத்திற்கான உங்கள் வாயில்.",
-        "te-IN": "వర్దంత్ ఎనర్జీ ప్లాట్‌ఫారమ్‌కు స్వాగతం. శుభ్రమైన, పచ్చ శక్తి వ్యాపారానికి మీ ద్వారం."
+        "en-IN": "Welcome to GreenGrid! I'm your AI assistant for clean, green energy trading. Let's make India greener together.",
+        "hi-IN": "ग्रीनग्रिड में आपका स्वागत है! मैं आपका एआई असिस्टेंट हूं, स्वच्छ, हरित ऊर्जा व्यापार के लिए। आइए मिलकर भारत को हरा-भरा बनाएं।",
+        "mr-IN": "ग्रीनग्रिडवर आपले स्वागत आहे! मी तुमचा एआई असिस्टंट आहे, स्वच्छ, हरित ऊर्जा व्यापारासाठी।",
+        "ta-IN": "கிரீன்கிரிட்டிற்கு வரவேற்கிறோம்! நான் உங்கள் AI உதவியாளர், தூய்மையான, பசுமை ஆற்றல் வர்த்தகத்திற்கு.",
+        "te-IN": "గ్రీన్‌గ్రిడ్‌కు స్వాగతం! నేను మీ AI అసిస్టెంట్, శుభ్రమైన, పచ్చ శక్తి వ్యాపారం కోసం."
     },
     "contract_created": {
-        "en-IN": "Congratulations! Your energy contract has been successfully created. You are now contributing to a greener India.",
-        "hi-IN": "बधाई हो! आपका ऊर्जा अनुबंध सफलतापूर्वक बन गया है। अब आप एक हरित भारत में योगदान दे रहे हैं।"
+        "en-IN": "Great news! Your GreenGrid energy contract is now active. You are now contributing to a greener India.",
+        "hi-IN": "शानदार खबर! आपका ग्रीनग्रिड ऊर्जा अनुबंध अब सक्रिय है। अब आप एक हरित भारत में योगदान दे रहे हैं।"
     },
     "payment_success": {
-        "en-IN": "Payment successful! Amount of {amount} rupees has been processed. Thank you for choosing green energy.",
-        "hi-IN": "भुगतान सफल! {amount} रुपये की राशि संसाधित हो गई है। हरित ऊर्जा चुनने के लिए धन्यवाद।"
+        "en-IN": "Payment confirmed! {amount} rupees processed successfully on GreenGrid. Thank you for choosing clean energy.",
+        "hi-IN": "भुगतान सफल! ग्रीनग्रिड पर {amount} रुपये संसाधित हो गए। स्वच्छ ऊर्जा चुनने के लिए धन्यवाद।"
     },
     "price_alert": {
-        "en-IN": "Price Alert! {energy_type} energy prices are now at {price} rupees per unit. This is {change}% {direction} from yesterday.",
-        "hi-IN": "मूल्य सूचना! {energy_type} ऊर्जा की कीमत अब {price} रुपये प्रति यूनिट है। यह कल से {change}% {direction} है।"
+        "en-IN": "GreenGrid Price Alert! {energy_type} energy is now {price} rupees per unit. That's {change}% {direction} from yesterday.",
+        "hi-IN": "ग्रीनग्रिड मूल्य सूचना! {energy_type} ऊर्जा अब {price} रुपये प्रति यूनिट है। यह कल से {change}% {direction} है।"
     },
     "certificate_earned": {
-        "en-IN": "Congratulations! You have earned a new Green Energy Certificate. You have saved {carbon} kilograms of carbon emissions.",
-        "hi-IN": "बधाई हो! आपने एक नया हरित ऊर्जा प्रमाणपत्र अर्जित किया है। आपने {carbon} किलोग्राम कार्बन उत्सर्जन बचाया है।"
+        "en-IN": "Congratulations! You've earned a GreenGrid Certificate. You've saved {carbon} kilograms of carbon emissions. Well done!",
+        "hi-IN": "बधाई हो! आपने ग्रीनग्रिड प्रमाणपत्र अर्जित किया है। आपने {carbon} किलोग्राम कार्बन उत्सर्जन बचाया है। शाबाश!"
     },
     "daily_summary": {
-        "en-IN": "Good {time_of_day}! Your daily energy summary: You consumed {consumption} kilowatt hours today. {comparison} yesterday.",
-        "hi-IN": "शुभ {time_of_day}! आपका दैनिक ऊर्जा सारांश: आपने आज {consumption} किलोवाट घंटे उपभोग किया। कल की तुलना में {comparison}।"
+        "en-IN": "Good {time_of_day}! Here's your GreenGrid energy summary: You used {consumption} kilowatt hours today. That's {comparison} yesterday.",
+        "hi-IN": "शुभ {time_of_day}! आपका ग्रीनग्रिड ऊर्जा सारांश: आज आपने {consumption} किलोवाट घंटे उपयोग किया। कल की तुलना में {comparison}।"
     }
 }
 
@@ -252,13 +257,15 @@ class AIVoiceService:
         # Extract audio from response
         if "audios" in response and response["audios"]:
             audio_base64 = response["audios"][0]
-            # Estimate duration (rough calculation)
+            audio_format = response.get("format", "mp3")
+            # Estimate duration (rough calculation for MP3)
             audio_bytes = len(base64.b64decode(audio_base64))
-            duration = audio_bytes / (22050 * 2)  # 22050 Hz, 16-bit
+            # MP3 at ~128kbps = 16KB/s, so duration ≈ bytes / 16000
+            duration = audio_bytes / 16000
             
             return TTSResponse(
                 audio_base64=audio_base64,
-                audio_format="wav",
+                audio_format=audio_format,
                 duration_seconds=round(duration, 2),
                 language=language.value,
                 speaker=speaker.value
@@ -303,9 +310,9 @@ class AIVoiceService:
     ) -> TTSResponse:
         """Generate personalized welcome message."""
         if language == IndianLanguage.HINDI:
-            text = f"नमस्ते {user_name}! वर्डेंट एनर्जी प्लेटफॉर्म में आपका स्वागत है।"
+            text = f"नमस्ते {user_name}! ग्रीनग्रिड में आपका स्वागत है। मैं आपका एआई असिस्टेंट हूं।"
         else:
-            text = f"Hello {user_name}! Welcome to Verdant Energy Platform."
+            text = f"Hello {user_name}! Welcome to GreenGrid. I'm your AI assistant for clean energy trading."
         
         return await self.speak(text, language)
     

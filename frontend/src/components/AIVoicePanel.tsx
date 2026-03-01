@@ -105,7 +105,7 @@ const AIVoicePanel = ({ className = "" }: AIVoicePanelProps) => {
           AI Voice (TTS)
         </h3>
         <span className="text-[9px] text-muted-foreground ml-auto">
-          Sarvam Bulbul
+          GreenGrid AI Voice
         </span>
       </div>
 

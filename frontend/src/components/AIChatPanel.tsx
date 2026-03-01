@@ -10,8 +10,11 @@ import {
   User,
   Loader2,
   Lightbulb,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { useAIChat, useAIClearHistory, useAITip } from "@/hooks/useAI";
+import { useVoice } from "@/context/VoiceContext";
 import type { ChatMessage } from "@/types/ai";
 
 interface AIChatPanelProps {
@@ -22,11 +25,13 @@ const AIChatPanel = ({ userId = "anonymous" }: AIChatPanelProps) => {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const chatMutation = useAIChat();
   const clearMutation = useAIClearHistory();
   const { data: tipData } = useAITip();
+  const { settings: voiceSettings, speak, speakAIResponse, isSpeaking, stop } = useVoice();
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -63,6 +68,11 @@ const AIChatPanel = ({ userId = "anonymous" }: AIChatPanelProps) => {
             provider: data.provider,
           };
           setMessages((prev) => [...prev, assistantMsg]);
+          
+          // Auto-speak AI response if enabled
+          if (voiceSettings.enabled && voiceSettings.autoPlayAIResponses) {
+            speakAIResponse(data.message);
+          }
         },
         onError: (err) => {
           const errorMsg: ChatMessage = {
@@ -75,7 +85,7 @@ const AIChatPanel = ({ userId = "anonymous" }: AIChatPanelProps) => {
         },
       },
     );
-  }, [input, chatMutation, userId]);
+  }, [input, chatMutation, userId, voiceSettings, speakAIResponse]);
 
   const handleClear = useCallback(() => {
     clearMutation.mutate(userId, {
@@ -125,10 +135,10 @@ const AIChatPanel = ({ userId = "anonymous" }: AIChatPanelProps) => {
                 </div>
                 <div>
                   <h3 className="text-sm font-heading font-semibold text-foreground">
-                    Verdant AI
+                    GreenGrid AI
                   </h3>
                   <p className="text-[9px] text-muted-foreground">
-                    Energy assistant
+                    Your energy assistant
                   </p>
                 </div>
               </div>
@@ -163,7 +173,7 @@ const AIChatPanel = ({ userId = "anonymous" }: AIChatPanelProps) => {
                   </div>
                   <div>
                     <p className="text-sm font-heading font-semibold text-foreground">
-                      Hi! I'm Verdant AI
+                      Hi! I'm GreenGrid AI
                     </p>
                     <p className="text-xs text-muted-foreground mt-1 max-w-[240px] mx-auto">
                       Ask me about energy trading, prices, sustainability, or
@@ -226,11 +236,37 @@ const AIChatPanel = ({ userId = "anonymous" }: AIChatPanelProps) => {
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{msg.content}</p>
-                    {msg.model && (
-                      <p className="text-[8px] opacity-50 mt-1">
-                        {msg.provider} • {msg.tokens_used} tokens
-                      </p>
-                    )}
+                    <div className="flex items-center justify-between mt-1 gap-2">
+                      {msg.model && (
+                        <p className="text-[8px] opacity-50">
+                          {msg.provider} • {msg.tokens_used} tokens
+                        </p>
+                      )}
+                      {/* Speak button for assistant messages */}
+                      {msg.role === "assistant" && voiceSettings.enabled && (
+                        <button
+                          onClick={() => {
+                            if (isSpeaking && speakingMsgId === msg.id) {
+                              stop();
+                              setSpeakingMsgId(null);
+                            } else {
+                              setSpeakingMsgId(msg.id);
+                              speak(msg.content).finally(() => setSpeakingMsgId(null));
+                            }
+                          }}
+                          className={`p-1 rounded hover:bg-primary/10 transition-colors ${
+                            isSpeaking && speakingMsgId === msg.id ? "text-primary animate-pulse" : "text-muted-foreground hover:text-primary"
+                          }`}
+                          title={isSpeaking && speakingMsgId === msg.id ? "Stop speaking" : "Read aloud"}
+                        >
+                          {isSpeaking && speakingMsgId === msg.id ? (
+                            <VolumeX className="w-3 h-3" />
+                          ) : (
+                            <Volume2 className="w-3 h-3" />
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
                   {msg.role === "user" && (
                     <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">

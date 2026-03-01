@@ -58,13 +58,19 @@ async def create_producer(
 
 async def list_producers(
     status_filter: Optional[ProducerStatus] = None,
+    owner_id: Optional[str] = None,
     skip: int = 0,
     limit: int = 50,
 ) -> ProducerListResponse:
-    """Return paginated list of producers, optionally filtered by status."""
+    """Return paginated list of producers, optionally filtered by status or owner."""
     query = {}
     if status_filter is not None:
         query["status"] = status_filter.value
+    if owner_id is not None:
+        try:
+            query["owner_id"] = PydanticObjectId(owner_id)
+        except Exception:
+            pass  # ignore invalid owner_id
 
     total = await Producer.find(query).count()
     items = await Producer.find(query).skip(skip).limit(limit).to_list()

@@ -5,7 +5,7 @@ import {
   Users, ShoppingBag, Plug, Award, DollarSign, CreditCard, ShieldCheck, Scale, Settings, Bell,
   User, FileText, History, Wallet, UsersRound, HelpCircle, PlusCircle, ChevronDown,
   Home, ArrowLeftRight, Banknote, TreePine, BarChart3, UserCircle, Wrench, LogOut,
-  MessageSquare, Mic,
+  MessageSquare, Mic, Network,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -75,6 +75,7 @@ const navSections: NavSection[] = [
       { title: "Smart City", url: "/smart-city", icon: MapPin },
       { title: "Future Sim", url: "/future", icon: Calendar },
       { title: "EIP Simulator", url: "/eip", icon: Globe },
+      { title: "Network Insights", url: "/network-insights", icon: Network },
     ],
   },
   {

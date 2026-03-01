@@ -8,7 +8,8 @@ import { Zap, Leaf, ShoppingCart, TrendingUp, Brain, ArrowUpRight, ArrowDownRigh
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useListings } from "@/hooks/useListings";
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
+import { useVoiceNotifications } from "@/hooks/useVoiceNotifications";
 
 const sourceIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   solar: Sun,
@@ -49,8 +50,17 @@ const fallbackCityData = [
 
 const Dashboard = () => {
   const { data: dashboard, isLoading, error, refetch } = useAnalytics();
-
   const { data: listings } = useListings({ limit: 100 });
+  const { welcomeUser, isEnabled } = useVoiceNotifications();
+  const hasWelcomed = useRef(false);
+
+  // Welcome notification on first visit
+  useEffect(() => {
+    if (!isLoading && !hasWelcomed.current && isEnabled) {
+      hasWelcomed.current = true;
+      welcomeUser();
+    }
+  }, [isLoading, welcomeUser, isEnabled]);
 
   const activeListingsCount = listings?.items?.filter(l => l.status === "active").length ?? 0;
 

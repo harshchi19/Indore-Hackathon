@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Upload, CheckCircle, Clock, AlertCircle, FileText, User, Building, MapPin, RefreshCw, MessageSquare } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 /* TODO: Replace with API data when backend KYC endpoint is available */
 const verificationSteps = [
@@ -191,7 +192,7 @@ const KYC = () => {
                   <div className="rounded-lg bg-saffron/5 border border-saffron/20 p-4">
                     <p className="text-sm text-foreground mb-2">Re-upload Address Proof</p>
                     <p className="text-xs text-muted-foreground mb-3">Your electricity bill document needs to be clearer.</p>
-                    <Button size="sm" className="w-full text-xs">
+                    <Button size="sm" className="w-full text-xs" onClick={() => toast.info("Document upload dialog coming soon")}>
                       <Upload className="w-3 h-3 mr-1" /> Upload New Document
                     </Button>
                   </div>
@@ -212,7 +213,7 @@ const KYC = () => {
                   <h3 className="font-heading font-semibold text-foreground flex items-center gap-2">
                     <FileText className="w-4 h-4 text-primary" /> Uploaded Documents
                   </h3>
-                  <Button size="sm" variant="outline" className="text-xs">
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => toast.info("Document upload dialog coming soon")}>
                     <Upload className="w-3 h-3 mr-1" /> Upload
                   </Button>
                 </div>
@@ -240,7 +241,7 @@ const KYC = () => {
                           {doc.status}
                         </span>
                         {doc.status === "pending" && (
-                          <Button variant="ghost" size="sm" className="h-7 text-xs">
+                          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => toast.info(`Re-validating ${doc.name}...`)}>
                             <RefreshCw className="w-3 h-3" />
                           </Button>
                         )}

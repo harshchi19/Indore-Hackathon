@@ -226,7 +226,7 @@ export default function AIVoice() {
                 <div>
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 border border-white/20 text-xs mb-4">
                     <Mic className="w-3 h-3 text-white" />
-                    <span className="text-white font-medium">Sarvam AI · Bulbul TTS · 11 Indian Languages</span>
+                    <span className="text-white font-medium">GreenGrid AI Voice · 11 Indian Languages</span>
                   </div>
                   <h1 className="text-2xl lg:text-3xl font-heading font-bold text-white mb-2">
                     AI Voice Centre
@@ -550,7 +550,7 @@ export default function AIVoice() {
                 {/* Info footer */}
                 <div className="rounded-xl bg-muted/30 border border-border p-3">
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    <span className="font-medium text-foreground">Bulbul TTS</span> by Sarvam AI — India's leading multilingual speech synthesis model, optimised for natural Indian language prosody and accent.
+                    <span className="font-medium text-foreground">GreenGrid AI Voice</span> — Natural multilingual speech synthesis in 11 Indian languages, optimised for clear energy notifications and accessibility.
                   </p>
                 </div>
               </motion.div>

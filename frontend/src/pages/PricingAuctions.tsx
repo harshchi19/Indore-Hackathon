@@ -6,15 +6,18 @@ import { LoadingSpinner, ErrorCard } from "@/components/ui/ApiStates";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { DollarSign, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Gavel, Clock, Plus, Zap, Activity } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useQuery } from "@tanstack/react-query";
 import { pricingService } from "@/services/pricingService";
 import { useListings } from "@/hooks/useListings";
 import { EnergySource } from "@/types";
+import { useVoiceNotifications } from "@/hooks/useVoiceNotifications";
 
 const PricingAuctions = () => {
   const [bidAmount, setBidAmount] = useState<string>("");
+  const { priceAlert, isEnabled } = useVoiceNotifications();
+  const lastPriceRef = useRef<number | null>(null);
 
   const { data: spotPrices, isLoading: spotLoading } = useQuery({
     queryKey: ["pricing", "spot", "all"],
@@ -34,6 +37,19 @@ const PricingAuctions = () => {
   const { data: listingsRes } = useListings({ status: "active" as any, limit: 10 });
 
   const currentPrice = livePrices?.[0]?.price_per_kwh ?? 7.2;
+
+  // Voice alert on significant price change (>5%)
+  useEffect(() => {
+    if (!isEnabled || !currentPrice) return;
+    
+    if (lastPriceRef.current !== null) {
+      const change = ((currentPrice - lastPriceRef.current) / lastPriceRef.current) * 100;
+      if (Math.abs(change) >= 5) {
+        priceAlert("Solar", currentPrice, Math.abs(change), change > 0 ? "up" : "down");
+      }
+    }
+    lastPriceRef.current = currentPrice;
+  }, [currentPrice, priceAlert, isEnabled]);
 
   const spotPriceData = useMemo(() => {
     if (!historicalData?.data?.length) {
