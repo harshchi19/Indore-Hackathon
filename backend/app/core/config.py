@@ -5,9 +5,9 @@ Uses pydantic-settings for typed, validated configuration from environment.
 
 from __future__ import annotations
 
+import json
 from functools import lru_cache
 from pathlib import Path
-from typing import List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
@@ -42,11 +42,24 @@ class Settings(BaseSettings):
 
     # ── API ───────────────────────────────────────────────
     API_V1_PREFIX: str = "/api/v1"
-    ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:8080",
-    ]
+    ALLOWED_ORIGINS: str = '["http://localhost:3000","http://localhost:5173","http://localhost:8080"]'
+
+    @property
+    def allowed_origins_list(self) -> list[str]:
+        """Parse ALLOWED_ORIGINS from JSON array, comma-separated, or plain string."""
+        v = self.ALLOWED_ORIGINS.strip() if self.ALLOWED_ORIGINS else ""
+        if not v:
+            return ["*"]
+        # Try JSON array first
+        if v.startswith("["):
+            try:
+                parsed = json.loads(v)
+                if isinstance(parsed, list):
+                    return [str(i) for i in parsed]
+            except (json.JSONDecodeError, ValueError):
+                pass
+        # Comma-separated or single origin
+        return [origin.strip() for origin in v.split(",") if origin.strip()]
 
     # ── MongoDB ───────────────────────────────────────────
     MONGODB_URI: str = "mongodb://localhost:27017"

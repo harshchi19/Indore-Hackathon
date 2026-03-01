@@ -42,7 +42,7 @@ services:
         generateValue: true  # Render auto-generates a secure random string
 
       - key: ALLOWED_ORIGINS
-        sync: false  # Set to your Vercel frontend URL, e.g. ["https://your-app.vercel.app"]
+        value: "*"  # Change to your Vercel URL after deploy, e.g. https://your-app.vercel.app
 
       - key: REDIS_URL
         sync: false  # Optional – set if using Render Redis add-on
