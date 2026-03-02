@@ -429,6 +429,26 @@ async def get_sample_queries():
                 "description": "Find paths between users",
                 "query": "MATCH path = shortestPath((u1:User)-[*..4]-(u2:User)) WHERE u1.id <> u2.id RETURN path LIMIT 10"
             },
+            {
+                "name": "Biomass & Geothermal Network",
+                "description": "Biomass and geothermal producers and their energy listings",
+                "query": "MATCH (p:Producer)-[r:OFFERS]->(l:EnergyListing) WHERE p.energy_type IN ['biomass', 'geothermal'] RETURN p, r, l"
+            },
+            {
+                "name": "Transaction Network",
+                "description": "Energy purchase transactions linked to contracts",
+                "query": "MATCH (u:User)-[r1:MADE_TRANSACTION]->(t:Transaction)-[r2:FOR_CONTRACT]->(c:Contract) RETURN u, r1, t, r2, c LIMIT 40"
+            },
+            {
+                "name": "Certificate Flow",
+                "description": "Green certificates issued by producers and owned by users",
+                "query": "MATCH (u:User)-[r1:OWNS_CERTIFICATE]->(c:Certificate)<-[r2:ISSUED]-(p:Producer) RETURN u, r1, c, r2, p LIMIT 30"
+            },
+            {
+                "name": "Similar Users Network",
+                "description": "Users with similar energy trading patterns",
+                "query": "MATCH (u1:User)-[r:SIMILAR_TO]-(u2:User) RETURN u1, r, u2 LIMIT 40"
+            },
         ]
     }
 
