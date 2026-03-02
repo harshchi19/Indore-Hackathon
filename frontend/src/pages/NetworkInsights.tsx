@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Network, Users, Factory, FileText, ShoppingCart, Award, Zap,
   ZoomIn, ZoomOut, Maximize2, Sun, Wind, Droplets, Leaf,
-  TrendingUp, Sparkles, BarChart3
+  TrendingUp, Sparkles, BarChart3, Repeat, Link, Share2
 } from "lucide-react";
 import { FloatingOrbs } from "@/components/ui/FloatingOrbs";
 import { PageTransition } from "@/components/ui/PageTransition";
@@ -24,6 +24,7 @@ const nodeColors: Record<string, string> = {
   EnergyListing: "#3b82f6",
   Contract: "#8b5cf6",
   Certificate: "#ec4899",
+  Transaction: "#f97316",
   Node: "#6b7280",
 };
 
@@ -88,6 +89,38 @@ LIMIT 30`,
     icon: Users,
     color: "from-indigo-500 to-violet-600",
     query: "MATCH (u:User)-[r]->(n) RETURN u, r, n LIMIT 40",
+  },
+  {
+    id: "biomass-geothermal",
+    name: "Biomass & Geothermal",
+    description: "Biomass and geothermal energy producers and listings",
+    icon: Leaf,
+    color: "from-lime-500 to-green-600",
+    query: "MATCH (p:Producer)-[r:OFFERS]->(l:EnergyListing) WHERE p.energy_type IN ['biomass', 'geothermal'] RETURN p, r, l",
+  },
+  {
+    id: "transaction-network",
+    name: "Transaction Network",
+    description: "Energy purchase transactions and linked contracts",
+    icon: Repeat,
+    color: "from-orange-500 to-red-500",
+    query: "MATCH (u:User)-[r1:MADE_TRANSACTION]->(t:Transaction)-[r2:FOR_CONTRACT]->(c:Contract) RETURN u, r1, t, r2, c LIMIT 40",
+  },
+  {
+    id: "certificate-flow",
+    name: "Certificate Flow",
+    description: "Green certificates issued by producers and owned by users",
+    icon: Link,
+    color: "from-teal-500 to-cyan-600",
+    query: "MATCH (u:User)-[r1:OWNS_CERTIFICATE]->(c:Certificate)<-[r2:ISSUED]-(p:Producer) RETURN u, r1, c, r2, p LIMIT 30",
+  },
+  {
+    id: "similar-users",
+    name: "Similar Users Network",
+    description: "Users with similar energy trading patterns",
+    icon: Share2,
+    color: "from-purple-500 to-indigo-600",
+    query: "MATCH (u1:User)-[r:SIMILAR_TO]-(u2:User) RETURN u1, r, u2 LIMIT 40",
   },
 ];
 
@@ -294,7 +327,7 @@ const NetworkInsights = () => {
                 <Sparkles className="w-4 h-4 text-violet-500" />
                 <h2 className="text-sm font-medium text-foreground">Choose a Visualization</h2>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                 {visualizations.map((viz, i) => {
                   const Icon = viz.icon;
                   const isActive = selectedViz === viz.id;
